@@ -14,15 +14,16 @@ public class RenduDAO implements DAO<Rendu, String> {
 
     @Override
     public boolean ajouter(Rendu objet) {
-      String sql = "INSERT INTO rendre (num_pret, situation, montant_paye, date_rendu) VALUES (?, ?, ?, ?)";
+      String sql = "INSERT INTO rendre (num_rendu, num_pret, situation, montant_paye, date_rendu) VALUES (?, ?, ?, ?, ?)";
 
     try (Connection cn = ConnexionBD.getConnexion();
          PreparedStatement ps = cn.prepareStatement(sql)) {
 
-        ps.setString(1, objet.getNumPret());
-        ps.setString(2, objet.getSituation());
-        ps.setBigDecimal(3, objet.getMontantPaye());
-        ps.setDate(4, java.sql.Date.valueOf(objet.getDateRendu()));
+        ps.setString(1, objet.getNumRendu());
+        ps.setString(2, objet.getNumPret());
+        ps.setString(3, objet.getSituation());
+        ps.setBigDecimal(4, objet.getMontantPaye());
+        ps.setDate(5, java.sql.Date.valueOf(objet.getDateRendu()));
 
         return ps.executeUpdate() > 0;
 

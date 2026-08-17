@@ -33,11 +33,13 @@ public class MainPanel extends JPanel {
     private final HeaderPanel headerPanel;
     private final JPanel conteneurCartes;
     private final CardLayout cardLayout;
+    
+    // On garde une unique référence partagée
+    private final ClientPanel clientPanel;
 
     public MainPanel() {
 
         setLayout(new BorderLayout());
-
         setBackground(new Color(245, 247, 252));
 
         headerPanel = new HeaderPanel();
@@ -47,7 +49,11 @@ public class MainPanel extends JPanel {
         conteneurCartes = new JPanel(cardLayout);
         conteneurCartes.setOpaque(false);
 
-        conteneurCartes.add(new ClientPanel(), "CLIENTS");
+        // Initialisation de l'instance unique
+        clientPanel = new ClientPanel();
+
+        // On l'ajoute au CardLayout en utilisant la variable
+        conteneurCartes.add(clientPanel, "CLIENTS");
         conteneurCartes.add(new VirementPanel(), "VIREMENTS");
         conteneurCartes.add(new PretPanel(), "PRETS");
         conteneurCartes.add(new RenduPanel(), "REMBOURSEMENTS");
@@ -60,6 +66,9 @@ public class MainPanel extends JPanel {
 
     /** Appelé par le Sidebar quand l'utilisateur clique sur une entrée du menu. */
     public void afficherPanel(String cle) {
+        if ("CLIENTS".equals(cle)) {
+            clientPanel.rafraichir();
+        }
         cardLayout.show(conteneurCartes, cle);
         headerPanel.setTitre(TITRES.getOrDefault(cle, ""));
     }

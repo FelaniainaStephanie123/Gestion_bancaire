@@ -1,4 +1,3 @@
-
 package vue.panels;
 
 import modele.Client;
@@ -11,6 +10,9 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
+
+import dao.ClientDAO;
+
 import java.awt.*;
 import java.math.BigDecimal;
 import java.util.List;
@@ -131,8 +133,25 @@ public class ClientPanel extends JPanel {
         return clientsAffiches.get(ligne);
     }
 
-    private void rafraichir() {
+    // private void rafraichir() {
 
+    //     String motCle = champRecherche == null ? "" : champRecherche.getText().trim();
+    //     clientsAffiches = clientService.rechercherClients(motCle);
+
+    //     modeleTable.setRowCount(0);
+    //     for (Client c : clientsAffiches) {
+    //         modeleTable.addRow(new Object[]{
+    //                 c.getNumCompte(),
+    //                 c.getNom(),
+    //                 c.getPrenoms(),
+    //                 c.getTel(),
+    //                 c.getMail(),
+    //                 c.getSoldeActuel(),
+    //                 ""
+    //         });
+    //     }
+    // }
+    public void rafraichir() {
         String motCle = champRecherche == null ? "" : champRecherche.getText().trim();
         clientsAffiches = clientService.rechercherClients(motCle);
 
@@ -209,14 +228,6 @@ public class ClientPanel extends JPanel {
         contenu.add(champLabelise("Email", champMail));
         contenu.add(Box.createVerticalStrut(14));
         contenu.add(champLabelise("Solde " + (modification ? "actuel" : "initial") + " (Ar)", champSolde));
-
-        JLabel indiceSolde = new JLabel("Le montant doit être positif");
-        indiceSolde.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        indiceSolde.setForeground(new Color(128, 0, 32)); // grenat
-        indiceSolde.setAlignmentX(Component.LEFT_ALIGNMENT);
-        contenu.add(Box.createVerticalStrut(4));
-        contenu.add(indiceSolde);
-
         contenu.add(Box.createVerticalStrut(24));
 
         JPanel boutons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
@@ -394,5 +405,7 @@ public class ClientPanel extends JPanel {
         public Object getCellEditorValue() {
             return "";
         }
+        // Dans vue.panels.ClientPanel.java
+
     }
 }

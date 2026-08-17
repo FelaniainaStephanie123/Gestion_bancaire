@@ -6,6 +6,8 @@ import vue.composants.ChampTexteArrondi;
 import vue.composants.PanneauArrondi;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -49,7 +51,24 @@ public class SituationPanel extends JPanel {
 
         champRecherche = new ChampTexteArrondi("Filtrer par n° de prêt, client ou situation...");
         champRecherche.setPreferredSize(new Dimension(360, 40));
-        champRecherche.addActionListener(e -> rafraichir());
+        
+        // Recherche réactive en temps réel à chaque modification du texte
+        champRecherche.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                rafraichir();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                rafraichir();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                rafraichir();
+            }
+        });
 
         barre.add(champRecherche, BorderLayout.WEST);
         return barre;
@@ -92,12 +111,6 @@ public class SituationPanel extends JPanel {
     private void rafraichir() {
 
         List<SituationPret> tous = pretService.situationsDesPrets();
-        for (SituationPret s : tous) {
-    System.out.println("Valeur reçue de la BDD : [" + s.getSituationActuelle() + "]"); // <--- Ajoute ça
-    
-    String client = (s.getNom() == null ? "" : s.getNom()) + " " + (s.getPrenoms() == null ? "" : s.getPrenoms());
-    // ... le reste du code
-        }
         String motCle = champRecherche == null ? "" : champRecherche.getText().trim().toLowerCase();
 
         modeleTable.setRowCount(0);
@@ -133,7 +146,7 @@ public class SituationPanel extends JPanel {
 
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
-                                                         boolean hasFocus, int row, int column) {
+                                                       boolean hasFocus, int row, int column) {
 
             JLabel label = (JLabel) super.getTableCellRendererComponent(
                     table, value, isSelected, hasFocus, row, column);

@@ -6,7 +6,7 @@ import java.sql.SQLException;
 
 public class ConnexionBD {
 
-    private static final String URL = "jdbc:postgresql://localhost:5432/banque_bdd";
+    private static final String URL = "jdbc:postgresql://localhost:5432/banque_bdd?charSet=UTF-8";
     private static final String UTILISATEUR = "postgres";
     private static final String MOT_DE_PASSE = "123456";
 

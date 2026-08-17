@@ -92,6 +92,12 @@ public class SituationPanel extends JPanel {
     private void rafraichir() {
 
         List<SituationPret> tous = pretService.situationsDesPrets();
+        for (SituationPret s : tous) {
+    System.out.println("Valeur reçue de la BDD : [" + s.getSituationActuelle() + "]"); // <--- Ajoute ça
+    
+    String client = (s.getNom() == null ? "" : s.getNom()) + " " + (s.getPrenoms() == null ? "" : s.getPrenoms());
+    // ... le reste du code
+        }
         String motCle = champRecherche == null ? "" : champRecherche.getText().trim().toLowerCase();
 
         modeleTable.setRowCount(0);

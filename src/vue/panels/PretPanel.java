@@ -13,7 +13,6 @@ import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 
 /**
@@ -24,8 +23,6 @@ public class PretPanel extends JPanel {
 
     private static final Color FOND = new Color(245, 247, 252);
 
-    // Une seule colonne "Actions" qui contiendra les boutons Modifier + Supprimer
-    // (même principe que dans ClientPanel).
     private static final String[] COLONNES = {
             "N° Prêt", "N° Compte", "Montant prêté", "Taux (%)",
             "Montant à rendre", "Date prêt", "Échéance", "Actions"
@@ -41,7 +38,6 @@ public class PretPanel extends JPanel {
     private List<Pret> pretsAffiches;
 
     public PretPanel() {
-
         setBackground(FOND);
         setLayout(new BorderLayout(20, 20));
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
@@ -53,7 +49,6 @@ public class PretPanel extends JPanel {
     }
 
     private JPanel construireBarreOutils() {
-
         JPanel barre = new JPanel(new BorderLayout(15, 0));
         barre.setOpaque(false);
 
@@ -75,7 +70,6 @@ public class PretPanel extends JPanel {
     }
 
     private JScrollPane construireTableau() {
-
         modeleTable = new DefaultTableModel(COLONNES, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -101,7 +95,6 @@ public class PretPanel extends JPanel {
         table.getColumnModel().getColumn(5).setPreferredWidth(110);
         table.getColumnModel().getColumn(6).setPreferredWidth(110);
 
-        // La colonne Actions doit être assez large pour contenir les DEUX boutons.
         table.getColumnModel().getColumn(INDEX_COLONNE_ACTIONS).setPreferredWidth(230);
         table.getColumnModel().getColumn(INDEX_COLONNE_ACTIONS).setMinWidth(230);
 
@@ -123,7 +116,6 @@ public class PretPanel extends JPanel {
     }
 
     private void rafraichir() {
-
         List<Pret> tous = pretService.tousLesPrets();
         String motCle = champRecherche == null ? "" : champRecherche.getText().trim().toLowerCase();
 
@@ -150,7 +142,6 @@ public class PretPanel extends JPanel {
 
     /** Ouvre le formulaire d'ajout (pretExistant == null) ou de modification. */
     private void ouvrirFormulaire(Pret pretExistant) {
-
         boolean modification = pretExistant != null;
 
         JDialog dialogue = new JDialog(
@@ -171,19 +162,31 @@ public class PretPanel extends JPanel {
         ChampTexteArrondi champNumCompte = new ChampTexteArrondi("Numéro de compte client");
         ChampTexteArrondi champMontant = new ChampTexteArrondi("Montant en Ar");
         ChampTexteArrondi champTaux = new ChampTexteArrondi("Ex: 10.00");
-        ChampTexteArrondi champDatePret = new ChampTexteArrondi("AAAA-MM-JJ");
-        ChampTexteArrondi champEcheance = new ChampTexteArrondi("AAAA-MM-JJ");
 
+        LocalDate dateDuJour;
+        LocalDate dateEcheanceCalculee;
+
+        if (modification) {
+            dateDuJour = pretExistant.getDatePret();
+            dateEcheanceCalculee = pretExistant.getDateEcheance();
+        } else {
+            dateDuJour = LocalDate.now();
+            dateEcheanceCalculee = dateDuJour.plusMonths(1);
+        }
+
+       ChampTexteArrondi champDatePret = new ChampTexteArrondi("");
+        champDatePret.setText(dateDuJour.toString());
+        champDatePret.setEnabled(false);
+
+        ChampTexteArrondi champEcheance = new ChampTexteArrondi("");
+        champEcheance.setText(dateEcheanceCalculee.toString());
+        champEcheance.setEnabled(false);
         if (modification) {
             champNumPret.setText(pretExistant.getNumPret());
             champNumPret.setEditable(false);
             champNumCompte.setText(pretExistant.getNumCompte());
             champMontant.setText(String.valueOf(pretExistant.getMontantPrete()));
             champTaux.setText(String.valueOf(pretExistant.getTauxInteret()));
-            champDatePret.setText(String.valueOf(pretExistant.getDatePret()));
-            if (pretExistant.getDateEcheance() != null) {
-                champEcheance.setText(String.valueOf(pretExistant.getDateEcheance()));
-            }
         } else {
             champTaux.setText("10.00");
         }
@@ -216,12 +219,8 @@ public class PretPanel extends JPanel {
                 pret.setNumCompte(champNumCompte.getText().trim());
                 pret.setMontantPrete(new BigDecimal(champMontant.getText().trim()));
                 pret.setTauxInteret(new BigDecimal(champTaux.getText().trim()));
-                pret.setDatePret(LocalDate.parse(champDatePret.getText().trim()));
-
-                String echeanceTexte = champEcheance.getText().trim();
-                if (!echeanceTexte.isEmpty()) {
-                    pret.setDateEcheance(LocalDate.parse(echeanceTexte));
-                }
+                pret.setDatePret(dateDuJour);
+                pret.setDateEcheance(dateEcheanceCalculee);
 
                 boolean succes = modification
                         ? pretService.modifierPret(pret)
@@ -239,9 +238,6 @@ public class PretPanel extends JPanel {
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(dialogue,
                         "Montant ou taux invalide.", "Erreur", JOptionPane.ERROR_MESSAGE);
-            } catch (DateTimeParseException ex) {
-                JOptionPane.showMessageDialog(dialogue,
-                        "Date invalide, format attendu AAAA-MM-JJ.", "Erreur", JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -253,12 +249,11 @@ public class PretPanel extends JPanel {
         dialogue.setVisible(true);
     }
 
-    private JPanel champLabelise(String libelle, JComponent champ) {
-
-        JPanel conteneur = new JPanel();
-        conteneur.setOpaque(false);
-        conteneur.setLayout(new BoxLayout(conteneur, BoxLayout.Y_AXIS));
-        conteneur.setAlignmentX(Component.LEFT_ALIGNMENT);
+   private JPanel champLabelise(String libelle, JComponent champ) {
+        JPanel panneauChamp = new JPanel();
+        panneauChamp.setOpaque(false);
+        panneauChamp.setLayout(new BoxLayout(panneauChamp, BoxLayout.Y_AXIS));
+        panneauChamp.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel label = new JLabel(libelle);
         label.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -269,15 +264,14 @@ public class PretPanel extends JPanel {
         champ.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         champ.setPreferredSize(new Dimension(340, 40));
 
-        conteneur.add(label);
-        conteneur.add(Box.createVerticalStrut(4));
-        conteneur.add(champ);
+        panneauChamp.add(label);
+        panneauChamp.add(Box.createVerticalStrut(4));
+        panneauChamp.add(champ);
 
-        return conteneur;
+        return panneauChamp;
     }
 
     private class ActionsCellRenderer extends JPanel implements TableCellRenderer {
-
         private final BoutonArrondi boutonModifier;
         private final BoutonArrondi boutonSupprimer;
 
@@ -305,7 +299,6 @@ public class PretPanel extends JPanel {
     }
 
     private class ActionsCellEditor extends AbstractCellEditor implements TableCellEditor {
-
         private final JPanel panneau;
         private final JButton boutonModifier;
         private final JButton boutonSupprimer;

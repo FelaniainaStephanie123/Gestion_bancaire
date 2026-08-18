@@ -6,6 +6,10 @@ import modele.Rendu;
 import modele.SituationPret;
 import java.util.List;
 import java.math.BigDecimal;
+import dao.ClientDAO;
+import dao.PretDAO;
+import modele.Client;
+import modele.Pret;
 public class RenduService {
 
     private final RenduDAO renduDAO;
@@ -61,7 +65,41 @@ private final SituationPretDAO situationPretDAO;
             rendu.setSituation(Rendu.SITUATION_PAYE_UNE_PART);
         }
 
-        return renduDAO.ajouter(rendu);
+        // return renduDAO.ajouter(rendu);
+        // 1. Enregistrer le remboursement
+        boolean renduAjoutre = renduDAO.ajouter(rendu);
+
+        // 2. Extraire (soustraire) le montant payé du solde du client
+        if (renduAjoutre) {
+            PretDAO pretDAO = new PretDAO();
+            ClientDAO clientDAO = new ClientDAO();
+
+            Pret pret = pretDAO.rechercherParId(rendu.getNumPret());
+            if (pret != null) {
+                System.out.println("DEBUG - Prêt trouvé, NumCompte associé : " + pret.getNumCompte());
+                Client client = clientDAO.rechercherParId(pret.getNumCompte());
+                
+                if (client != null) {
+                    System.out.println("DEBUG - Client trouvé, Ancien solde : " + client.getSoldeActuel());
+                    BigDecimal soldeActuel = client.getSoldeActuel();
+                    if (soldeActuel == null) {
+                        soldeActuel = BigDecimal.ZERO;
+                    }
+
+                    BigDecimal nouveauSolde = soldeActuel.subtract(rendu.getMontantPaye());
+                    client.setSoldeActuel(nouveauSolde);
+                    
+                    boolean modifie = clientDAO.modifier(client);
+                    System.out.println("DEBUG - Modification du client en base : " + modifie + " (Nouveau solde : " + nouveauSolde + ")");
+                } else {
+                    System.out.println("DEBUG - ERREUR : Client introuvable pour le compte ID: " + pret.getNumCompte());
+                }
+            } else {
+                System.out.println("DEBUG - ERREUR : Prêt introuvable pour l'ID: " + rendu.getNumPret());
+            }
+        }
+
+        return renduAjoutre;
     }
 
 public boolean modifierRemboursement(Rendu rendu) {

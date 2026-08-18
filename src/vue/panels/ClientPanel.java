@@ -16,6 +16,8 @@ import dao.ClientDAO;
 import java.awt.*;
 import java.math.BigDecimal;
 import java.util.List;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
 
 /**
  * Écran "Gestion des clients" : recherche (LIKE %mot%), tableau
@@ -50,6 +52,17 @@ public class ClientPanel extends JPanel {
         add(construireTableau(), BorderLayout.CENTER);
 
         rafraichir();
+       addAncestorListener(new AncestorListener() {
+            @Override
+            public void ancestorAdded(AncestorEvent event) {
+                rafraichir();
+            }
+            @Override
+            public void ancestorRemoved(AncestorEvent event) {}
+
+            @Override
+            public void ancestorMoved(AncestorEvent event) {}
+            });
     }
 
    private JPanel construireBarreOutils() {

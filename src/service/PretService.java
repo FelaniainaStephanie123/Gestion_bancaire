@@ -7,7 +7,8 @@ import modele.SituationPret;
 
 import java.math.BigDecimal;
 import java.util.List;
-
+import dao.ClientDAO;
+import modele.Client;
 public class PretService {
     
     private final PretDAO pretDAO;
@@ -54,8 +55,7 @@ public class PretService {
             return false;
         }
 
-        // Vérification : Empêcher un nouveau prêt si un prêt est déjà en cours (reste à payer > 0)
-        List<SituationPret> situations = situationsDesPrets();
+       List<SituationPret> situations = situationsDesPrets();
         for (SituationPret s : situations) {
             if (s.getNumCompte() != null && s.getNumCompte().equals(pret.getNumCompte())) {
                 if (s.getResteAPayer() != null && s.getResteAPayer().compareTo(BigDecimal.ZERO) > 0) {
@@ -65,7 +65,28 @@ public class PretService {
             }
         }
 
-        return pretDAO.ajouter(pret);
+        // 1. Enregistrer le prêt
+        boolean pretAjoute = pretDAO.ajouter(pret);
+
+        // 2. Mettre à jour le solde du client si l'ajout a réussi
+        if (pretAjoute) {
+            ClientDAO clientDAO = new ClientDAO();
+            Client client = clientDAO.rechercherParId(pret.getNumCompte());
+
+            if (client != null) {
+                BigDecimal soldeActuel = client.getSoldeActuel();
+                if (soldeActuel == null) {
+                    soldeActuel = BigDecimal.ZERO;
+                }
+
+                // Créditer le compte du montant du prêt
+                BigDecimal nouveauSolde = soldeActuel.add(pret.getMontantPrete());
+                client.setSoldeActuel(nouveauSolde);
+                clientDAO.modifier(client);
+            }
+        }
+
+        return pretAjoute;
     }
 
     /**

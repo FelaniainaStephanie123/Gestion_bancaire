@@ -37,14 +37,15 @@ public class ClientDAO implements DAO<Client, String> {
 
     @Override
     public boolean modifier(Client c) {
-        String sql = "UPDATE client SET nom = ?, prenoms = ?, tel = ?, mail = ? WHERE num_compte = ?";
+        String sql = "UPDATE client SET nom = ?, prenoms = ?, tel = ?, mail = ?, solde_actuel = ? WHERE num_compte = ?";
         try (Connection cn = ConnexionBD.getConnexion();
              PreparedStatement ps = cn.prepareStatement(sql)) {
             ps.setString(1, c.getNom());
             ps.setString(2, c.getPrenoms());
             ps.setString(3, c.getTel());
             ps.setString(4, c.getMail());
-            ps.setString(5, c.getNumCompte());
+            ps.setBigDecimal(5, c.getSoldeActuel());
+            ps.setString(6, c.getNumCompte());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();

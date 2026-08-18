@@ -237,8 +237,8 @@ public class PretPanel extends JPanel {
                     rafraichir();
                 } else {
                     JOptionPane.showMessageDialog(dialogue,
-                            "Impossible d'enregistrer le prêt (vérifiez les champs).",
-                            "Erreur", JOptionPane.ERROR_MESSAGE);
+                            "Impossible d'accorder ce prêt : le client possède déjà un prêt en cours non soldé.",
+                            "Prêt refusé", JOptionPane.WARNING_MESSAGE);
                 }
 
             } catch (NumberFormatException ex) {

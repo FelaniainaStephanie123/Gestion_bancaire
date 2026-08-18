@@ -101,14 +101,15 @@ public class ClientDAO implements DAO<Client, String> {
     /**
      * Recherche par numéro de compte OU nom, avec LIKE (point 2 du barème).
      */
-    public List<Client> rechercher(String motCle) {
+   public List<Client> rechercher(String motCle) {
         List<Client> liste = new ArrayList<>();
-        String sql = "SELECT * FROM client WHERE num_compte LIKE ? OR nom LIKE ? ORDER BY nom";
+        String sql = "SELECT * FROM client WHERE LOWER(num_compte) LIKE LOWER(?) OR LOWER(nom) LIKE LOWER(?) OR LOWER(prenoms) LIKE LOWER(?) ORDER BY nom";
         try (Connection cn = ConnexionBD.getConnexion();
              PreparedStatement ps = cn.prepareStatement(sql)) {
             String motif = "%" + motCle + "%";
             ps.setString(1, motif);
             ps.setString(2, motif);
+            ps.setString(3, motif);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     liste.add(construireDepuisResultSet(rs));

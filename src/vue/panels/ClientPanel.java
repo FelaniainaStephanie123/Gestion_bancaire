@@ -52,31 +52,36 @@ public class ClientPanel extends JPanel {
         rafraichir();
     }
 
-    private JPanel construireBarreOutils() {
+   private JPanel construireBarreOutils() {
+    JPanel barre = new JPanel(new BorderLayout(15, 0));
+    barre.setOpaque(false);
 
-        JPanel barre = new JPanel(new BorderLayout(15, 0));
-        barre.setOpaque(false);
+    // 1. Initialisation du champ
+    champRecherche = new ChampTexteArrondi("Rechercher par n° de compte ou nom...");
+    champRecherche.setPreferredSize(new Dimension(320, 40));
 
-        champRecherche = new ChampTexteArrondi("Rechercher par n° de compte ou nom...");
-        champRecherche.setPreferredSize(new Dimension(320, 40));
-        champRecherche.addActionListener(e -> rafraichir());
+    // 2. Utilisation d'un DocumentListener simple qui appelle rafraichir()
+    champRecherche.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+        @Override
+        public void insertUpdate(javax.swing.event.DocumentEvent e) { rafraichir(); }
+        @Override
+        public void removeUpdate(javax.swing.event.DocumentEvent e) { rafraichir(); }
+        @Override
+        public void changedUpdate(javax.swing.event.DocumentEvent e) { rafraichir(); }
+    });
 
-        BoutonArrondi boutonRechercher = new BoutonArrondi("Rechercher", BoutonArrondi.Style.CONTOUR);
-        boutonRechercher.addActionListener(e -> rafraichir());
+    JPanel zoneRecherche = new JPanel(new BorderLayout(10, 0));
+    zoneRecherche.setOpaque(false);
+    zoneRecherche.add(champRecherche, BorderLayout.CENTER);
 
-        JPanel zoneRecherche = new JPanel(new BorderLayout(10, 0));
-        zoneRecherche.setOpaque(false);
-        zoneRecherche.add(champRecherche, BorderLayout.CENTER);
-        zoneRecherche.add(boutonRechercher, BorderLayout.EAST);
+    BoutonArrondi boutonNouveau = new BoutonArrondi("+ Nouveau client");
+    boutonNouveau.addActionListener(e -> ouvrirFormulaire(null));
 
-        BoutonArrondi boutonNouveau = new BoutonArrondi("+ Nouveau client");
-        boutonNouveau.addActionListener(e -> ouvrirFormulaire(null));
+    barre.add(zoneRecherche, BorderLayout.WEST);
+    barre.add(boutonNouveau, BorderLayout.EAST);
 
-        barre.add(zoneRecherche, BorderLayout.WEST);
-        barre.add(boutonNouveau, BorderLayout.EAST);
-
-        return barre;
-    }
+    return barre;
+}
 
     private JScrollPane construireTableau() {
 

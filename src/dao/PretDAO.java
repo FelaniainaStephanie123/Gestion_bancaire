@@ -82,7 +82,26 @@ public boolean modifier(Pret objet) {
         return false;
     }
 }
-
+public String genererProchainNumPret() {
+    String sql = "SELECT num_pret FROM preter ORDER BY num_pret DESC LIMIT 1";
+    
+    try (Connection cn = ConnexionBD.getConnexion();
+         PreparedStatement ps = cn.prepareStatement(sql);
+         ResultSet rs = ps.executeQuery()) {
+        
+        if (rs.next()) {
+            String dernierNum = rs.getString("num_pret"); // Ex: "P05"
+            if (dernierNum != null && dernierNum.startsWith("P")) {
+                int idNum = Integer.parseInt(dernierNum.substring(1)); // Extrait "05" -> 5
+                return String.format("P%02d", idNum + 1); // Incrémente et formate -> "P06"
+            }
+        }
+    } catch (SQLException | NumberFormatException e) {
+        e.printStackTrace();
+    }
+    
+    return "P01"; // Valeur par défaut si la table est vide
+}
 @Override
 public boolean supprimer(String id) {
    String sql = "DELETE FROM preter WHERE num_pret = ?";

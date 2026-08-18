@@ -1,5 +1,6 @@
 package vue.panels;
 
+import dao.PretDAO;
 import modele.Pret;
 import service.PretService;
 import vue.composants.BoutonArrondi;
@@ -31,6 +32,7 @@ public class PretPanel extends JPanel {
     private static final int INDEX_COLONNE_ACTIONS = COLONNES.length - 1;
 
     private final PretService pretService = new PretService();
+    private final PretDAO pretDAO = new PretDAO(); // Ajout pour récupérer le prochain ID
 
     private DefaultTableModel modeleTable;
     private JTable table;
@@ -174,13 +176,14 @@ public class PretPanel extends JPanel {
             dateEcheanceCalculee = dateDuJour.plusMonths(1);
         }
 
-       ChampTexteArrondi champDatePret = new ChampTexteArrondi("");
+        ChampTexteArrondi champDatePret = new ChampTexteArrondi("");
         champDatePret.setText(dateDuJour.toString());
         champDatePret.setEnabled(false);
 
         ChampTexteArrondi champEcheance = new ChampTexteArrondi("");
         champEcheance.setText(dateEcheanceCalculee.toString());
         champEcheance.setEnabled(false);
+
         if (modification) {
             champNumPret.setText(pretExistant.getNumPret());
             champNumPret.setEditable(false);
@@ -188,6 +191,9 @@ public class PretPanel extends JPanel {
             champMontant.setText(String.valueOf(pretExistant.getMontantPrete()));
             champTaux.setText(String.valueOf(pretExistant.getTauxInteret()));
         } else {
+            // Génération automatique du numéro de prêt (ex: P01, P02...)
+            champNumPret.setText(pretDAO.genererProchainNumPret());
+            champNumPret.setEditable(false); // On bloque l'édition pour garder l'auto-incrémentation propre
             champTaux.setText("10.00");
         }
 

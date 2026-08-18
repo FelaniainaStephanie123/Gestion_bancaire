@@ -193,7 +193,7 @@ public class ClientPanel extends JPanel {
         contenu.setLayout(new BoxLayout(contenu, BoxLayout.Y_AXIS));
         contenu.setBorder(BorderFactory.createEmptyBorder(24, 30, 24, 30));
 
-        ChampTexteArrondi champNumCompte = new ChampTexteArrondi("Ex: 200543");
+        ChampTexteArrondi champNumCompte = new ChampTexteArrondi("Ex: ACC001");
         ChampTexteArrondi champNom = new ChampTexteArrondi("Nom de famille");
         ChampTexteArrondi champPrenoms = new ChampTexteArrondi("Prénoms");
         ChampTexteArrondi champTel = new ChampTexteArrondi("Numéro de téléphone");
@@ -211,11 +211,15 @@ public class ClientPanel extends JPanel {
             champSolde.setEditable(false);
             champSolde.setToolTipText("Le solde évolue uniquement via les virements.");
         } else {
+            champNumCompte.setText(clientService.generationCompteAuto());
+            champNumCompte.setEditable(false);
             champSolde.setText("0");
         }
 
-        contenu.add(champLabelise("N° de compte", champNumCompte));
-        contenu.add(Box.createVerticalStrut(14));
+        if (modification) {
+            contenu.add(champLabelise("N° de compte", champNumCompte));
+            contenu.add(Box.createVerticalStrut(14));
+        }
         contenu.add(champLabelise("Nom", champNom));
         contenu.add(Box.createVerticalStrut(14));
         contenu.add(champLabelise("Prénoms", champPrenoms));
@@ -246,7 +250,7 @@ public class ClientPanel extends JPanel {
         boutonEnregistrer.addActionListener(e -> {
             try {
                 Client client = new Client();
-                client.setNumCompte(champNumCompte.getText().trim());
+                client.setNumCompte(modification ? champNumCompte.getText().trim() : clientService.generationCompteAuto());
                 client.setNom(champNom.getText().trim());
                 client.setPrenoms(champPrenoms.getText().trim());
 

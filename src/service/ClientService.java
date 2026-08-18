@@ -5,6 +5,7 @@ import modele.Client;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ClientService {
 
@@ -24,15 +25,17 @@ public class ClientService {
             return false;
         }
 
-        if (client.getNumCompte() == null || client.getNumCompte().isEmpty()) {
-            System.out.println("Erreur : numéro de compte manquant.");
-            return false;
-        }
-
         if (client.getNom() == null || client.getNom().isEmpty()) {
             System.out.println("Erreur : nom manquant.");
             return false;
         }
+
+        List<String> comptesExistants = clientDAO.listerTous().stream()
+                .map(Client::getNumCompte)
+                .collect(Collectors.toList());
+
+        String numeroCompte = ClientNumeroCompteGenerator.genererNumeroCompte(comptesExistants);
+        client.setNumCompte(numeroCompte);
 
         if (clientDAO.rechercherParId(client.getNumCompte()) != null) {
             System.out.println("Erreur : ce numéro de compte existe déjà.");
@@ -83,6 +86,13 @@ public class ClientService {
         }
 
         return clientDAO.rechercherParId(numCompte);
+    }
+
+    public String generationCompteAuto() {
+        List<String> comptesExistants = clientDAO.listerTous().stream()
+                .map(Client::getNumCompte)
+                .collect(Collectors.toList());
+        return ClientNumeroCompteGenerator.genererNumeroCompte(comptesExistants);
     }
 
     public List<Client> tousLesClients() {

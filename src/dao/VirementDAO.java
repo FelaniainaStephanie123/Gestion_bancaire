@@ -118,9 +118,9 @@ public class VirementDAO implements DAO<Virement, String> {
      */
     public List<Virement> rechercher(String motCle) {
         List<Virement> liste = new ArrayList<>();
-        String sql = "SELECT * FROM virement WHERE num_virement LIKE ? " +
-                     "OR num_compte_envoyeur LIKE ? OR num_compte_beneficiaire LIKE ? " +
-                     "ORDER BY date_transfert DESC";
+       String sql = "SELECT * FROM virement WHERE LOWER(num_virement) LIKE LOWER(?) " +
+                 "OR LOWER(num_compte_envoyeur) LIKE LOWER(?) " +
+                 "OR LOWER(num_compte_beneficiaire) LIKE LOWER(?) ORDER BY date_transfert DESC";
         try (Connection cn = ConnexionBD.getConnexion();
              PreparedStatement ps = cn.prepareStatement(sql)) {
             String motif = "%" + motCle + "%";

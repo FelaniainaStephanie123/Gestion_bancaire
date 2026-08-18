@@ -108,7 +108,7 @@ public class SituationPanel extends JPanel {
         return conteneur;
     }
 
-    private void rafraichir() {
+    public void rafraichir() {
 
         List<SituationPret> tous = pretService.situationsDesPrets();
         String motCle = champRecherche == null ? "" : champRecherche.getText().trim().toLowerCase();

@@ -3,6 +3,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "App",
+            "request": "launch",
+            "mainClass": "App",
+            "projectName": "Projet_Java_2_368adc68"
+        },
+        {
+            "type": "java",
             "name": "Lancer BankSys (App.java)",
             "request": "launch",
             "mainClass": "App",

@@ -126,7 +126,7 @@ public class PretPanel extends JPanel {
         return conteneur;
     }
 
-    private void rafraichir() {
+    public void rafraichir() {
         List<Pret> tous = pretService.tousLesPrets();
         String motCle = champRecherche == null ? "" : champRecherche.getText().trim().toLowerCase();
 

@@ -149,7 +149,7 @@ boutonNouveau.addActionListener(e -> ouvrirFormulaire(null));
         return renduAffiches.get(ligne);
     }
 
-    private void rafraichir() {
+    public void rafraichir() {
 
         List<Rendu> tous = renduService.tousLesRemboursements();
         String motCle = champRecherche == null ? "" : champRecherche.getText().trim().toLowerCase();

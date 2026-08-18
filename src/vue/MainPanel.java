@@ -34,8 +34,11 @@ public class MainPanel extends JPanel {
     private final JPanel conteneurCartes;
     private final CardLayout cardLayout;
     
-    // On garde une unique référence partagée
+    // Références stockées correctement
+    private final PretPanel pretPanel;
+    private final RenduPanel renduPanel;
     private final ClientPanel clientPanel;
+    private final SituationPanel situationPanel;
 
     public MainPanel() {
 
@@ -49,28 +52,44 @@ public class MainPanel extends JPanel {
         conteneurCartes = new JPanel(cardLayout);
         conteneurCartes.setOpaque(false);
 
-        // Initialisation de l'instance unique
+        // Initialisation et stockage des instances
         clientPanel = new ClientPanel();
+        pretPanel = new PretPanel();
+        renduPanel = new RenduPanel();
+        situationPanel = new SituationPanel();
 
-        // On l'ajoute au CardLayout en utilisant la variable
+        // Ajout au CardLayout
         conteneurCartes.add(clientPanel, "CLIENTS");
         conteneurCartes.add(new VirementPanel(), "VIREMENTS");
-        conteneurCartes.add(new PretPanel(), "PRETS");
-        conteneurCartes.add(new RenduPanel(), "REMBOURSEMENTS");
-        conteneurCartes.add(new SituationPanel(), "SITUATION");
+        conteneurCartes.add(pretPanel, "PRETS");
+        conteneurCartes.add(renduPanel, "REMBOURSEMENTS");
+        conteneurCartes.add(situationPanel, "SITUATION");
         conteneurCartes.add(new BeneficePanel(), "BENEFICE");
         conteneurCartes.add(new NotificationPanel(), "NOTIFICATIONS");
 
         add(conteneurCartes, BorderLayout.CENTER);
     }
 
+    // Méthode pour rafraîchir à la fois les prêts et leur situation en temps réel
+    public void rafraichirDonneesPrets() {
+        if (pretPanel != null) {
+            pretPanel.rafraichir();
+        }
+        if (situationPanel != null) {
+            situationPanel.rafraichir();
+        }
+    }
+
     /** Appelé par le Sidebar quand l'utilisateur clique sur une entrée du menu. */
     public void afficherPanel(String cle) {
         if ("CLIENTS".equals(cle)) {
             clientPanel.rafraichir();
+        } else if ("PRETS".equals(cle)) {
+            pretPanel.rafraichir();
+        } else if ("SITUATION".equals(cle)) {
+            situationPanel.rafraichir();
         }
         cardLayout.show(conteneurCartes, cle);
         headerPanel.setTitre(TITRES.getOrDefault(cle, ""));
     }
-
 }

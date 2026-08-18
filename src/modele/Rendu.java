@@ -5,8 +5,8 @@ import java.time.LocalDate;
 
 public class Rendu {
 
-    public static final String SITUATION_TOUT_PAYE = "TOUT_PAYE";
-    public static final String SITUATION_PAYE_UNE_PART = "PAYE_PARTIEL";
+   public static final String SITUATION_TOUT_PAYE = "TOTAL";
+    public static final String SITUATION_PAYE_UNE_PART = "PARTIEL";
 
     private String numRendu;
     private String numPret;

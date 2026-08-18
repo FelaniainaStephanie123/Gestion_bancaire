@@ -32,7 +32,24 @@ public class RenduDAO implements DAO<Rendu, String> {
         return false;
     }
     }
+public String genererProchainNumRendu() {
+        String sql = "SELECT num_rendu FROM rendre ORDER BY num_rendu DESC LIMIT 1";
+        try (Connection cn = ConnexionBD.getConnexion();
+             PreparedStatement ps = cn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
 
+            if (rs.next()) {
+                String dernier = rs.getString("num_rendu"); // Ex: "R005" ou "R5"
+                // On extrait les chiffres après le 'R'
+                int numero = Integer.parseInt(dernier.replaceAll("\\D+", "")) + 1;
+                // On formate sur 3 chiffres (ex: R006), adapte si tu préfères R01 ou R1
+                return String.format("R%03d", numero);
+            }
+        } catch (SQLException | NumberFormatException e) {
+            e.printStackTrace();
+        }
+        return "R001"; // Premier ID si la table est vide
+    }
     @Override
     public boolean modifier(Rendu objet) {
         String sql = "UPDATE rendre SET num_pret = ?, situation = ?, montant_paye = ?, date_rendu = ? WHERE num_rendu = ?";

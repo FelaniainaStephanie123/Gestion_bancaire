@@ -51,25 +51,34 @@ public class PretPanel extends JPanel {
     }
 
     private JPanel construireBarreOutils() {
-        JPanel barre = new JPanel(new BorderLayout(15, 0));
-        barre.setOpaque(false);
+    JPanel barre = new JPanel(new BorderLayout(15, 0));
+    barre.setOpaque(false);
 
-        champRecherche = new ChampTexteArrondi("Rechercher un n° de prêt ou de compte...");
-        champRecherche.setPreferredSize(new Dimension(320, 40));
-        champRecherche.addActionListener(e -> rafraichir());
+    champRecherche = new ChampTexteArrondi("Rechercher un n° de prêt ou de compte...");
+    champRecherche.setPreferredSize(new Dimension(320, 40));
 
-        JPanel gauche = new JPanel(new BorderLayout());
-        gauche.setOpaque(false);
-        gauche.add(champRecherche, BorderLayout.CENTER);
+    // Ajout du DocumentListener pour déclencher rafraichir() à chaque frappe
+    champRecherche.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+        @Override
+        public void insertUpdate(javax.swing.event.DocumentEvent e) { rafraichir(); }
+        @Override
+        public void removeUpdate(javax.swing.event.DocumentEvent e) { rafraichir(); }
+        @Override
+        public void changedUpdate(javax.swing.event.DocumentEvent e) { rafraichir(); }
+    });
 
-        BoutonArrondi boutonNouveau = new BoutonArrondi("+ Nouveau prêt");
-        boutonNouveau.addActionListener(e -> ouvrirFormulaire(null));
+    JPanel gauche = new JPanel(new BorderLayout());
+    gauche.setOpaque(false);
+    gauche.add(champRecherche, BorderLayout.CENTER);
 
-        barre.add(gauche, BorderLayout.WEST);
-        barre.add(boutonNouveau, BorderLayout.EAST);
+    BoutonArrondi boutonNouveau = new BoutonArrondi("+ Nouveau prêt");
+    boutonNouveau.addActionListener(e -> ouvrirFormulaire(null));
 
-        return barre;
-    }
+    barre.add(gauche, BorderLayout.WEST);
+    barre.add(boutonNouveau, BorderLayout.EAST);
+
+    return barre;
+}
 
     private JScrollPane construireTableau() {
         modeleTable = new DefaultTableModel(COLONNES, 0) {

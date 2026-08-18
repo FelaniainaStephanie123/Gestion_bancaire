@@ -18,81 +18,51 @@ private final SituationPretDAO situationPretDAO;
 
 
     
-    public boolean ajouterRemboursement(Rendu rendu) {
+   public boolean ajouterRemboursement(Rendu rendu) {
 
+        if (rendu == null) {
+            System.out.println("Erreur : remboursement inexistant.");
+            return false;
+        }
 
-    if(rendu == null){
+        if (rendu.getNumPret() == null || rendu.getNumPret().isEmpty()) {
+            System.out.println("Erreur : numéro du prêt manquant.");
+            return false;
+        }
 
-        System.out.println("Erreur : remboursement inexistant.");
-        return false;
+        if (rendu.getMontantPaye() == null ||
+           rendu.getMontantPaye().compareTo(BigDecimal.ZERO) <= 0) {
+            System.out.println("Erreur : montant invalide.");
+            return false;
+        }
 
+        SituationPret situation = situationPretDAO.trouverParPret(rendu.getNumPret());
+
+        if (situation == null) {
+            System.out.println("Erreur : prêt introuvable.");
+            return false;
+        }
+
+        if (rendu.getMontantPaye().compareTo(situation.getResteAPayer()) > 0) {
+            System.out.println("Erreur : le remboursement dépasse la dette restante.");
+            return false;
+        }
+
+        if (rendu.getDateRendu() == null) {
+            System.out.println("Erreur : date de remboursement manquante.");
+            return false;
+        }
+
+        BigDecimal nouveauReste = situation.getResteAPayer().subtract(rendu.getMontantPaye());
+
+        if (nouveauReste.compareTo(BigDecimal.ZERO) == 0) {
+            rendu.setSituation(Rendu.SITUATION_TOUT_PAYE);
+        } else {
+            rendu.setSituation(Rendu.SITUATION_PAYE_UNE_PART);
+        }
+
+        return renduDAO.ajouter(rendu);
     }
-
-
-    if(rendu.getMontantPaye() == null ||
-       rendu.getMontantPaye().compareTo(BigDecimal.ZERO) <= 0){
-
-        System.out.println("Erreur : montant invalide.");
-        return false;
-
-    }
-
-
-    SituationPret situation = 
-            situationPretDAO.trouverParPret(rendu.getNumPret());
-
-
-    if(situation == null){
-
-        System.out.println("Erreur : prêt introuvable.");
-        return false;
-
-    }
-
-
-    if(rendu.getMontantPaye()
-            .compareTo(situation.getResteAPayer()) > 0){
-
-        System.out.println(
-            "Erreur : le remboursement dépasse la dette restante."
-        );
-
-        return false;
-
-    }
-if(rendu.getNumPret() == null ||
-   rendu.getNumPret().isEmpty()){
-
-    System.out.println("Erreur : numéro du prêt manquant.");
-    return false;
-
-}
-if(rendu.getDateRendu() == null){
-
-    System.out.println("Erreur : date de remboursement manquante.");
-    return false;
-
-}
-
-    BigDecimal nouveauReste =
-            situation.getResteAPayer()
-            .subtract(rendu.getMontantPaye());
-
-
-    if(nouveauReste.compareTo(BigDecimal.ZERO) == 0){
-
-        rendu.setSituation(Rendu.SITUATION_TOUT_PAYE);
-
-    }else{
-
-        rendu.setSituation(Rendu.SITUATION_PAYE_UNE_PART);
-
-    }
-
-
-    return renduDAO.ajouter(rendu);
-
-}
 
 public boolean modifierRemboursement(Rendu rendu) {
 

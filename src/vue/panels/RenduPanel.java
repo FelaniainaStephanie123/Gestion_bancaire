@@ -1,5 +1,6 @@
 package vue.panels;
 
+import dao.RenduDAO;
 import modele.Rendu;
 import service.RenduService;
 import vue.composants.BoutonArrondi;
@@ -27,6 +28,7 @@ public class RenduPanel extends JPanel {
     };
 
     private final RenduService renduService = new RenduService();
+    private final RenduDAO renduDAO = new RenduDAO(); // Ajouté pour générer le prochain N° de remboursement
 
     private DefaultTableModel modeleTable;
     private JTable table;
@@ -59,8 +61,8 @@ public class RenduPanel extends JPanel {
         gauche.setOpaque(false);
         gauche.add(champRecherche, BorderLayout.CENTER);
 
-        BoutonArrondi boutonNouveau = new BoutonArrondi("+ Nouveau remboursement");
-        boutonNouveau.addActionListener(e -> ouvrirFormulaire(null));
+       BoutonArrondi boutonNouveau = new BoutonArrondi("+ Nouveau remboursement");
+boutonNouveau.addActionListener(e -> ouvrirFormulaire(null));
 
         barre.add(gauche, BorderLayout.WEST);
         barre.add(boutonNouveau, BorderLayout.EAST);
@@ -199,7 +201,7 @@ public class RenduPanel extends JPanel {
         contenu.setBorder(BorderFactory.createEmptyBorder(24, 30, 24, 30));
 
         ChampTexteArrondi champNumRendu = new ChampTexteArrondi("Ex: R010");
-        ChampTexteArrondi champNumPret = new ChampTexteArrondi("N° du prêt concerné");
+        ChampTexteArrondi champNumPret = new ChampTexteArrondi("");
         ChampTexteArrondi champMontant = new ChampTexteArrondi("Montant versé en Ar");
         ChampTexteArrondi champDate = new ChampTexteArrondi("AAAA-MM-JJ");
 
@@ -210,6 +212,9 @@ public class RenduPanel extends JPanel {
             champMontant.setText(String.valueOf(renduExistant.getMontantPaye()));
             champDate.setText(String.valueOf(renduExistant.getDateRendu()));
         } else {
+            // Génération automatique du numéro de remboursement (ex: R01, R02...)
+            champNumRendu.setText(renduDAO.genererProchainNumRendu());
+            champNumRendu.setEditable(false);
             champDate.setText(String.valueOf(LocalDate.now()));
         }
 
@@ -291,5 +296,4 @@ public class RenduPanel extends JPanel {
 
         return conteneur;
     }
-
 }

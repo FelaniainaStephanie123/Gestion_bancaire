@@ -1,5 +1,7 @@
 package vue.panels;
 
+import dao.EmailNotificationDAO;
+import modele.EmailNotification;
 import service.NotificationService;
 import vue.composants.BoutonArrondi;
 import vue.composants.ChampTexteArrondi;
@@ -7,6 +9,9 @@ import vue.composants.PanneauArrondi;
 
 import javax.swing.*;
 import java.awt.*;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import javax.swing.table.DefaultTableModel;
 
 /**
  * Écran "Notification par email" : on saisit un n° de prêt, on prévisualise
@@ -18,6 +23,9 @@ public class NotificationPanel extends JPanel {
     private static final Color FOND = new Color(245, 247, 252);
 
     private final NotificationService notificationService = new NotificationService();
+    private final EmailNotificationDAO emailNotificationDAO = new EmailNotificationDAO();
+    private DefaultTableModel modeleHistorique;
+    private JTable tableHistorique;
 
     private ChampTexteArrondi champNumPret;
     private JTextArea zoneApercu;
@@ -29,6 +37,8 @@ public class NotificationPanel extends JPanel {
         setLayout(new BorderLayout(20, 20));
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
+        add(construireHistorique(), BorderLayout.NORTH);
+
         PanneauArrondi panneau = new PanneauArrondi();
         panneau.setLayout(new BorderLayout(0, 20));
         panneau.setBorder(BorderFactory.createEmptyBorder(26, 30, 26, 30));
@@ -38,6 +48,64 @@ public class NotificationPanel extends JPanel {
         panneau.add(construireBarreActions(), BorderLayout.SOUTH);
 
         add(panneau, BorderLayout.CENTER);
+        new Timer(60_000, e -> rafraichirHistorique()).start();
+    }
+
+    private JPanel construireHistorique() {
+        JPanel historique = new JPanel(new BorderLayout(0, 8));
+        historique.setOpaque(false);
+
+        JLabel titre = new JLabel("Emails envoyés");
+        titre.setFont(new Font("Segoe UI", Font.BOLD, 16));
+
+        BoutonArrondi actualiser = new BoutonArrondi("Actualiser", BoutonArrondi.Style.CONTOUR);
+        actualiser.addActionListener(e -> rafraichirHistorique());
+
+        JPanel entete = new JPanel(new BorderLayout());
+        entete.setOpaque(false);
+        entete.add(titre, BorderLayout.WEST);
+        entete.add(actualiser, BorderLayout.EAST);
+
+        String[] colonnes = {"Client", "Sujet", "Date d'envoi", "Statut"};
+        modeleHistorique = new DefaultTableModel(colonnes, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        tableHistorique = new JTable(modeleHistorique);
+        tableHistorique.setRowHeight(30);
+        tableHistorique.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        tableHistorique.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+        tableHistorique.setAutoCreateRowSorter(true);
+        tableHistorique.getColumnModel().getColumn(0).setPreferredWidth(220);
+        tableHistorique.getColumnModel().getColumn(1).setPreferredWidth(320);
+        tableHistorique.getColumnModel().getColumn(2).setPreferredWidth(150);
+        tableHistorique.getColumnModel().getColumn(3).setPreferredWidth(100);
+
+        JScrollPane defilement = new JScrollPane(tableHistorique);
+        defilement.setPreferredSize(new Dimension(0, 150));
+        defilement.setBorder(BorderFactory.createLineBorder(new Color(230, 233, 240)));
+
+        historique.add(entete, BorderLayout.NORTH);
+        historique.add(defilement, BorderLayout.CENTER);
+        rafraichirHistorique();
+        return historique;
+    }
+
+    private void rafraichirHistorique() {
+        if (modeleHistorique == null) {
+            return;
+        }
+        modeleHistorique.setRowCount(0);
+        DateTimeFormatter format = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        List<EmailNotification> historique = emailNotificationDAO.trouverHistorique();
+        for (EmailNotification email : historique) {
+            String date = email.getEnvoyeeLe() == null ? "-" : email.getEnvoyeeLe().format(format);
+            modeleHistorique.addRow(new Object[]{
+                    email.getDestinataire(), email.getSujet(), date, "Envoyé"
+            });
+        }
     }
 
     private JPanel construireFormulaireRecherche() {
@@ -142,6 +210,7 @@ public class NotificationPanel extends JPanel {
                     if (succes) {
                         statut.setText("Email envoyé avec succès.");
                         statut.setForeground(new Color(46, 139, 87));
+                        rafraichirHistorique();
                     } else {
                         statut.setText("Échec de l'envoi (prêt introuvable ou erreur SMTP).");
                         statut.setForeground(new Color(184, 55, 55));

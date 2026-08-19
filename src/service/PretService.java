@@ -1,14 +1,24 @@
 package service;
 
+import dao.ClientDAO;
 import dao.PretDAO;
 import dao.SituationPretDAO;
+import modele.Client;
+import modele.EmailNotification;
 import modele.Pret;
 import modele.SituationPret;
+import util.ConnexionBD;
 
 import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
-import dao.ClientDAO;
-import modele.Client;
+
 public class PretService {
     
     private final PretDAO pretDAO;
@@ -55,7 +65,7 @@ public class PretService {
             return false;
         }
 
-       List<SituationPret> situations = situationsDesPrets();
+        List<SituationPret> situations = situationsDesPrets();
         for (SituationPret s : situations) {
             if (s.getNumCompte() != null && s.getNumCompte().equals(pret.getNumCompte())) {
                 if (s.getResteAPayer() != null && s.getResteAPayer().compareTo(BigDecimal.ZERO) > 0) {
@@ -68,10 +78,76 @@ public class PretService {
         // 1. Enregistrer le prêt
         boolean pretAjoute = pretDAO.ajouter(pret);
 
-        // 2. Mettre à jour le solde du client si l'ajout a réussi
-       
+        // 2. Mettre à jour le solde du client et programmer la notification
+        if (pretAjoute) {
+            ClientDAO clientDAO = new ClientDAO();
+            Client client = clientDAO.rechercherParId(pret.getNumCompte());
+
+            if (client != null) {
+                BigDecimal soldeActuel = client.getSoldeActuel();
+                if (soldeActuel == null) {
+                    soldeActuel = BigDecimal.ZERO;
+                }
+
+                // Créditer le compte du montant du prêt
+                BigDecimal nouveauSolde = soldeActuel.add(pret.getMontantPrete());
+                client.setSoldeActuel(nouveauSolde);
+                clientDAO.modifier(client);
+            }
+
+            NotificationService notificationService = new NotificationService();
+            notificationService.programmerNotificationPret(pret);
+        }
 
         return pretAjoute;
+    }
+
+    /**
+     * Recherche de l'historique des notifications e-mail envoyées
+     */
+    public List<EmailNotification> trouverHistorique(LocalDate debut, LocalDate fin) {
+        List<EmailNotification> historique = new ArrayList<>();
+        
+        String sql = "SELECT id, destinataire, sujet, contenu, date_envoi, envoyee, envoyee_le "
+            + "FROM notification_email WHERE envoyee = TRUE "
+            + "AND (?::timestamp IS NULL OR envoyee_le >= ?::timestamp) "
+            + "AND (?::timestamp IS NULL OR envoyee_le < ?::timestamp) "
+            + "ORDER BY envoyee_le DESC NULLS LAST, id DESC";
+
+        try (Connection cn = ConnexionBD.getConnexion();
+             PreparedStatement ps = cn.prepareStatement(sql)) {
+             
+            Timestamp debutTimestamp = (debut == null) ? null : Timestamp.valueOf(debut.atStartOfDay());
+            Timestamp finTimestamp = (fin == null) ? null : Timestamp.valueOf(fin.plusDays(1).atStartOfDay());
+            
+            ps.setTimestamp(1, debutTimestamp);
+            ps.setTimestamp(2, debutTimestamp);
+            ps.setTimestamp(3, finTimestamp);
+            ps.setTimestamp(4, finTimestamp);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    EmailNotification notification = new EmailNotification();
+                    notification.setId(rs.getLong("id"));
+                    notification.setDestinataire(rs.getString("destinataire"));
+                    notification.setSujet(rs.getString("sujet"));
+                    notification.setContenu(rs.getString("contenu"));
+                    notification.setDateEnvoi(rs.getTimestamp("date_envoi").toLocalDateTime());
+                    notification.setEnvoyee(rs.getBoolean("envoyee"));
+                    if (rs.getTimestamp("envoyee_le") != null) {
+                        notification.setEnvoyeeLe(rs.getTimestamp("envoyee_le").toLocalDateTime());
+                    }
+                    historique.add(notification);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return historique;
+    }
+
+    public List<EmailNotification> trouverHistorique() {
+        return trouverHistorique(null, null);
     }
 
     /**

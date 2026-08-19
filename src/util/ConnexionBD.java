@@ -10,24 +10,14 @@ public class ConnexionBD {
     private static final String UTILISATEUR = "postgres";
     private static final String MOT_DE_PASSE = "2006";
 
-    private static Connection connexion;
-
     private ConnexionBD() {
     }
 
     public static Connection getConnexion() {
 
         try {
-            if (connexion == null || connexion.isClosed()) {
-
-                Class.forName("org.postgresql.Driver");
-
-                connexion = DriverManager.getConnection(
-                    URL,
-                    UTILISATEUR,
-                    MOT_DE_PASSE
-                );
-            }
+            Class.forName("org.postgresql.Driver");
+            return DriverManager.getConnection(URL, UTILISATEUR, MOT_DE_PASSE);
 
         } catch (ClassNotFoundException e) {
             System.err.println("Driver PostgreSQL introuvable");
@@ -38,18 +28,10 @@ public class ConnexionBD {
             e.printStackTrace();
         }
 
-        return connexion;
+        return null;
     }
 
     public static void fermer() {
-
-        try {
-            if (connexion != null && !connexion.isClosed()) {
-                connexion.close();
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        // Les connexions sont maintenant fermees par chaque DAO.
     }
 }

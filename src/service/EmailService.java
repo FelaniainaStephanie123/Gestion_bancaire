@@ -9,11 +9,17 @@ import java.util.Properties;
 public class EmailService {
 
 
-    private final String expediteur = "nambinintsoaranto67@gmail.com";
-    private final String motDePasse = "icxz luvs qjox cmdt";
+    private final String expediteur = System.getenv("BANKSYS_EMAIL");
+    private final String motDePasse = System.getenv("BANKSYS_EMAIL_PASSWORD");
 
 
     public boolean envoyerMail(String destinataire, String sujet, String contenu) {
+
+        if (expediteur == null || expediteur.isBlank()
+                || motDePasse == null || motDePasse.isBlank()) {
+            System.err.println("Email non envoye : configurez BANKSYS_EMAIL et BANKSYS_EMAIL_PASSWORD.");
+            return false;
+        }
 
 
         Properties properties = new Properties();
@@ -88,6 +94,9 @@ public class EmailService {
 
 
 
+        } catch (AuthenticationFailedException e) {
+            System.err.println("Email non envoye : identifiants Gmail refuses. Utilisez un mot de passe d'application.");
+            return false;
         } catch (MessagingException e) {
 
 

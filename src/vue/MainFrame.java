@@ -28,8 +28,7 @@ public class MainFrame extends JFrame {
 
         try {
             MainPanel mainPanel = new MainPanel();
-            Sidebar sidebar = new Sidebar(mainPanel::afficherPanel);
-
+Sidebar sidebar = new Sidebar(mainPanel::afficherPanel, agentConnecte);
             add(sidebar, BorderLayout.WEST);
             add(mainPanel, BorderLayout.CENTER);
         } catch (Exception ex) {

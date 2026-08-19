@@ -1,6 +1,9 @@
 package vue;
 
 import javax.swing.*;
+
+import modele.Agent;
+
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -22,7 +25,8 @@ public class Sidebar extends JPanel {
     private final Map<String, JPanel> boutonsParCle = new LinkedHashMap<>();
     private String cleActive;
 
-    public Sidebar(Consumer<String> surNavigation) {
+   
+   public Sidebar(Consumer<String> surNavigation, Agent agent) {
 
         setPreferredSize(new Dimension(230, 0));
         setBackground(FOND);
@@ -39,13 +43,18 @@ public class Sidebar extends JPanel {
         menu.setOpaque(false);
         menu.setLayout(new BoxLayout(menu, BoxLayout.Y_AXIS));
 
+        // Les menus communs à tout le monde (une seule fois chacun)
         ajouterEntree(menu, "CLIENTS", "Gestion des clients", surNavigation);
         ajouterEntree(menu, "VIREMENTS", "Virements", surNavigation);
         ajouterEntree(menu, "PRETS", "Gestion des prêts", surNavigation);
         ajouterEntree(menu, "REMBOURSEMENTS", "Remboursements", surNavigation);
         ajouterEntree(menu, "SITUATION", "Situation des prêts", surNavigation);
-        ajouterEntree(menu, "BENEFICE", "Bénéfice banque", surNavigation);
         ajouterEntree(menu, "NOTIFICATIONS", "Notifications email", surNavigation);
+
+        // Le menu sensible réservé uniquement à l'administrateur
+        if (agent != null && "ADMIN".equals(agent.getRole())) {
+            ajouterEntree(menu, "BENEFICE", "Bénéfice banque", surNavigation);
+        }
 
         add(menu, BorderLayout.CENTER);
 

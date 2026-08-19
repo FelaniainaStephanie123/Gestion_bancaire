@@ -19,6 +19,7 @@ public class AgentDAO {
 
         String motDePasseHache = HachageMotDePasse.hacher(motDePasseEnClair);
 
+        // La requête sélectionnera tous les champs y compris 'role'
         String sql = "SELECT * FROM agent WHERE nom_utilisateur = ? AND mot_de_passe = ?";
 
         try (Connection cn = ConnexionBD.getConnexion();
@@ -32,7 +33,8 @@ public class AgentDAO {
                     return new Agent(
                             rs.getInt("id_agent"),
                             rs.getString("nom_utilisateur"),
-                            rs.getString("nom_complet")
+                            rs.getString("nom_complet"),
+                            rs.getString("role") // Récupération du rôle depuis la BDD
                     );
                 }
             }

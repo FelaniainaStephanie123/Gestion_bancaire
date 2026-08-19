@@ -5,14 +5,16 @@ public class Agent {
     private int idAgent;
     private String nomUtilisateur;
     private String nomComplet;
+    private String role; // Ajout du rôle
 
     public Agent() {
     }
 
-    public Agent(int idAgent, String nomUtilisateur, String nomComplet) {
+    public Agent(int idAgent, String nomUtilisateur, String nomComplet, String role) {
         this.idAgent = idAgent;
         this.nomUtilisateur = nomUtilisateur;
         this.nomComplet = nomComplet;
+        this.role = role;
     }
 
     public int getIdAgent() {
@@ -37,5 +39,13 @@ public class Agent {
 
     public void setNomComplet(String nomComplet) {
         this.nomComplet = nomComplet;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 }

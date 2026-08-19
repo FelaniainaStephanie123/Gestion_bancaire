@@ -69,22 +69,7 @@ public class PretService {
         boolean pretAjoute = pretDAO.ajouter(pret);
 
         // 2. Mettre à jour le solde du client si l'ajout a réussi
-        if (pretAjoute) {
-            ClientDAO clientDAO = new ClientDAO();
-            Client client = clientDAO.rechercherParId(pret.getNumCompte());
-
-            if (client != null) {
-                BigDecimal soldeActuel = client.getSoldeActuel();
-                if (soldeActuel == null) {
-                    soldeActuel = BigDecimal.ZERO;
-                }
-
-                // Créditer le compte du montant du prêt
-                BigDecimal nouveauSolde = soldeActuel.add(pret.getMontantPrete());
-                client.setSoldeActuel(nouveauSolde);
-                clientDAO.modifier(client);
-            }
-        }
+       
 
         return pretAjoute;
     }

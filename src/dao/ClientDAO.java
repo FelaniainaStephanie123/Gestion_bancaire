@@ -86,7 +86,7 @@ public class ClientDAO implements DAO<Client, String> {
     @Override
     public List<Client> listerTous() {
         List<Client> liste = new ArrayList<>();
-        String sql = "SELECT * FROM client ORDER BY nom";
+        String sql = "SELECT * FROM client ORDER BY num_compte DESC";
         try (Connection cn = ConnexionBD.getConnexion();
              PreparedStatement ps = cn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {

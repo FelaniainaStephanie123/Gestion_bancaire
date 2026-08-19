@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -179,5 +180,47 @@ private Pret construireDepuisResultSet(ResultSet rs) throws SQLException {
     }
 
     return p;
+}
+public List<Pret> listerParPeriode(LocalDate dateDebut, LocalDate dateFin, String motCle) {
+    List<Pret> liste = new ArrayList<>();
+    StringBuilder sql = new StringBuilder("SELECT * FROM preter WHERE 1=1");
+    
+    if (dateDebut != null) {
+        sql.append(" AND date_pret >= ?");
+    }
+    if (dateFin != null) {
+        sql.append(" AND date_pret <= ?");
+    }
+    if (motCle != null && !motCle.trim().isEmpty()) {
+        sql.append(" AND (LOWER(num_pret) LIKE LOWER(?) OR LOWER(num_compte) LIKE LOWER(?))");
+    }
+    
+    sql.append(" ORDER BY num_pret DESC");
+
+    try (Connection cn = ConnexionBD.getConnexion();
+         PreparedStatement ps = cn.prepareStatement(sql.toString())) {
+        
+        int index = 1;
+        if (dateDebut != null) {
+            ps.setDate(index++, java.sql.Date.valueOf(dateDebut));
+        }
+        if (dateFin != null) {
+            ps.setDate(index++, java.sql.Date.valueOf(dateFin));
+        }
+        if (motCle != null && !motCle.trim().isEmpty()) {
+            String motif = "%" + motCle.trim() + "%";
+            ps.setString(index++, motif);
+            ps.setString(index++, motif);
+        }
+
+        try (ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                liste.add(construireDepuisResultSet(rs));
+            }
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+    return liste;
 }
 }

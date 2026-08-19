@@ -10,6 +10,7 @@ import modele.SituationPret;
 import util.ConnexionBD;
 
 import java.math.BigDecimal;
+<<<<<<< HEAD
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -17,6 +18,9 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.ArrayList;
+=======
+import java.time.LocalDate;
+>>>>>>> c8b9a4e684a99209dfc56be1f16f53305486da97
 import java.util.List;
 
 public class PretService {
@@ -216,4 +220,7 @@ public class PretService {
     public List<SituationPret> situationsDesPrets() {
         return situationPretDAO.listerSituations();
     }
+    public List<Pret> getPretsFiltres(LocalDate dateDebut, LocalDate dateFin, String motCle) {
+    return pretDAO.listerParPeriode(dateDebut, dateFin, motCle);
+}
 }

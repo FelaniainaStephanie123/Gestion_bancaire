@@ -151,24 +151,6 @@ public class ClientPanel extends JPanel {
         return clientsAffiches.get(ligne);
     }
 
-    // private void rafraichir() {
-
-    //     String motCle = champRecherche == null ? "" : champRecherche.getText().trim();
-    //     clientsAffiches = clientService.rechercherClients(motCle);
-
-    //     modeleTable.setRowCount(0);
-    //     for (Client c : clientsAffiches) {
-    //         modeleTable.addRow(new Object[]{
-    //                 c.getNumCompte(),
-    //                 c.getNom(),
-    //                 c.getPrenoms(),
-    //                 c.getTel(),
-    //                 c.getMail(),
-    //                 c.getSoldeActuel(),
-    //                 ""
-    //         });
-    //     }
-    // }
     public void rafraichir() {
         String motCle = champRecherche == null ? "" : champRecherche.getText().trim();
         clientsAffiches = clientService.rechercherClients(motCle);

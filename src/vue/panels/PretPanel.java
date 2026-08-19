@@ -11,9 +11,12 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.text.MaskFormatter;
 import java.awt.*;
 import java.math.BigDecimal;
+import java.text.ParseException;
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 /**
@@ -32,12 +35,14 @@ public class PretPanel extends JPanel {
     private static final int INDEX_COLONNE_ACTIONS = COLONNES.length - 1;
 
     private final PretService pretService = new PretService();
-    private final PretDAO pretDAO = new PretDAO(); // Ajout pour récupérer le prochain ID
+    private final PretDAO pretDAO = new PretDAO();
 
     private DefaultTableModel modeleTable;
     private JTable table;
     private ChampTexteArrondi champRecherche;
     private List<Pret> pretsAffiches;
+    private JFormattedTextField champDateDebut;
+    private JFormattedTextField champDateFin;
 
     public PretPanel() {
         setBackground(FOND);
@@ -51,34 +56,56 @@ public class PretPanel extends JPanel {
     }
 
     private JPanel construireBarreOutils() {
-    JPanel barre = new JPanel(new BorderLayout(15, 0));
-    barre.setOpaque(false);
+        JPanel barre = new JPanel(new BorderLayout(15, 0));
+        barre.setOpaque(false);
 
-    champRecherche = new ChampTexteArrondi("Rechercher un n° de prêt ou de compte...");
-    champRecherche.setPreferredSize(new Dimension(320, 40));
+        champRecherche = new ChampTexteArrondi("Rechercher un n° de prêt ou de compte...");
+        champRecherche.setPreferredSize(new Dimension(240, 40));
+        champRecherche.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { rafraichir(); }
+            @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { rafraichir(); }
+            @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { rafraichir(); }
+        });
 
-    // Ajout du DocumentListener pour déclencher rafraichir() à chaque frappe
-    champRecherche.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-        @Override
-        public void insertUpdate(javax.swing.event.DocumentEvent e) { rafraichir(); }
-        @Override
-        public void removeUpdate(javax.swing.event.DocumentEvent e) { rafraichir(); }
-        @Override
-        public void changedUpdate(javax.swing.event.DocumentEvent e) { rafraichir(); }
-    });
+        // Initialisation des sélecteurs de date filtrants
+        champDateDebut = creerChampDateFiltre();
+        champDateFin = creerChampDateFiltre();
 
-    JPanel gauche = new JPanel(new BorderLayout());
-    gauche.setOpaque(false);
-    gauche.add(champRecherche, BorderLayout.CENTER);
+        JPanel gauche = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        gauche.setOpaque(false);
+        gauche.add(champRecherche);
+        gauche.add(new JLabel("Du:"));
+        gauche.add(champDateDebut);
+        gauche.add(new JLabel("Au:"));
+        gauche.add(champDateFin);
 
-    BoutonArrondi boutonNouveau = new BoutonArrondi("+ Nouveau prêt");
-    boutonNouveau.addActionListener(e -> ouvrirFormulaire(null));
+        BoutonArrondi boutonNouveau = new BoutonArrondi("+ Nouveau prêt");
+        boutonNouveau.addActionListener(e -> ouvrirFormulaire(null));
 
-    barre.add(gauche, BorderLayout.WEST);
-    barre.add(boutonNouveau, BorderLayout.EAST);
+        barre.add(gauche, BorderLayout.WEST);
+        barre.add(boutonNouveau, BorderLayout.EAST);
 
-    return barre;
-}
+        return barre;
+    }
+
+    private JFormattedTextField creerChampDateFiltre() {
+        MaskFormatter formatter = null;
+        try {
+            formatter = new MaskFormatter("####-##-##");
+            formatter.setPlaceholderCharacter('_');
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        JFormattedTextField champ = new JFormattedTextField(formatter);
+        champ.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        champ.setPreferredSize(new Dimension(110, 40));
+        champ.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { rafraichir(); }
+            @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { rafraichir(); }
+            @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { rafraichir(); }
+        });
+        return champ;
+    }
 
     private JScrollPane construireTableau() {
         modeleTable = new DefaultTableModel(COLONNES, 0) {
@@ -130,10 +157,26 @@ public class PretPanel extends JPanel {
         List<Pret> tous = pretService.tousLesPrets();
         String motCle = champRecherche == null ? "" : champRecherche.getText().trim().toLowerCase();
 
+        // Récupération des filtres de dates sécurisés
+        LocalDate dateDebut = parserDateSecurisee(champDateDebut == null ? "" : champDateDebut.getText());
+        LocalDate dateFin = parserDateSecurisee(champDateFin == null ? "" : champDateFin.getText());
+
         pretsAffiches = tous.stream()
-                .filter(p -> motCle.isEmpty()
-                        || (p.getNumPret() != null && p.getNumPret().toLowerCase().contains(motCle))
-                        || (p.getNumCompte() != null && p.getNumCompte().toLowerCase().contains(motCle)))
+                .filter(p -> {
+                    boolean matchTexte = motCle.isEmpty()
+                            || (p.getNumPret() != null && p.getNumPret().toLowerCase().contains(motCle))
+                            || (p.getNumCompte() != null && p.getNumCompte().toLowerCase().contains(motCle));
+
+                    boolean matchDate = true;
+                    if (p.getDatePret() != null) {
+                        if (dateDebut != null && p.getDatePret().isBefore(dateDebut)) matchDate = false;
+                        if (dateFin != null && p.getDatePret().isAfter(dateFin)) matchDate = false;
+                    } else {
+                        if (dateDebut != null || dateFin != null) matchDate = false;
+                    }
+
+                    return matchTexte && matchDate;
+                })
                 .toList();
 
         modeleTable.setRowCount(0);
@@ -151,7 +194,18 @@ public class PretPanel extends JPanel {
         }
     }
 
-    /** Ouvre le formulaire d'ajout (pretExistant == null) ou de modification. */
+    private LocalDate parserDateSecurisee(String texte) {
+        if (texte == null || texte.contains("_") || texte.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(texte.trim());
+        } catch (DateTimeParseException e) {
+            return null;
+        }
+    }
+
+    /** Ouvre le formulaire d'ajout ou de modification. */
     private void ouvrirFormulaire(Pret pretExistant) {
         boolean modification = pretExistant != null;
 
@@ -160,7 +214,7 @@ public class PretPanel extends JPanel {
                 modification ? "Modifier le prêt" : "Nouveau prêt",
                 Dialog.ModalityType.APPLICATION_MODAL
         );
-        dialogue.setSize(420, 480);
+        dialogue.setSize(420, 500);
         dialogue.setLocationRelativeTo(this);
         dialogue.getContentPane().setBackground(Color.WHITE);
 
@@ -185,13 +239,22 @@ public class PretPanel extends JPanel {
             dateEcheanceCalculee = dateDuJour.plusMonths(1);
         }
 
-        ChampTexteArrondi champDatePret = new ChampTexteArrondi("");
-        champDatePret.setText(dateDuJour.toString());
-        champDatePret.setEnabled(false);
+        // Intégration du sélecteur de date formaté (AAAA-MM-JJ) dans le formulaire
+        MaskFormatter maskDate = null;
+        try {
+            maskDate = new MaskFormatter("####-##-##");
+            maskDate.setPlaceholderCharacter('_');
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
 
-        ChampTexteArrondi champEcheance = new ChampTexteArrondi("");
+        JFormattedTextField champDatePret = new JFormattedTextField(maskDate);
+        champDatePret.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        champDatePret.setText(dateDuJour.toString());
+
+        JFormattedTextField champEcheance = new JFormattedTextField(maskDate);
+        champEcheance.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         champEcheance.setText(dateEcheanceCalculee.toString());
-        champEcheance.setEnabled(false);
 
         if (modification) {
             champNumPret.setText(pretExistant.getNumPret());
@@ -200,24 +263,23 @@ public class PretPanel extends JPanel {
             champMontant.setText(String.valueOf(pretExistant.getMontantPrete()));
             champTaux.setText(String.valueOf(pretExistant.getTauxInteret()));
         } else {
-            // Génération automatique du numéro de prêt (ex: P01, P02...)
             champNumPret.setText(pretDAO.genererProchainNumPret());
-            champNumPret.setEditable(false); // On bloque l'édition pour garder l'auto-incrémentation propre
+            champNumPret.setEditable(false);
             champTaux.setText("10.00");
         }
 
         contenu.add(champLabelise("N° du prêt", champNumPret));
-        contenu.add(Box.createVerticalStrut(14));
+        contenu.add(Box.createVerticalStrut(12));
         contenu.add(champLabelise("N° de compte", champNumCompte));
-        contenu.add(Box.createVerticalStrut(14));
+        contenu.add(Box.createVerticalStrut(12));
         contenu.add(champLabelise("Montant prêté (Ar)", champMontant));
-        contenu.add(Box.createVerticalStrut(14));
+        contenu.add(Box.createVerticalStrut(12));
         contenu.add(champLabelise("Taux d'intérêt (%)", champTaux));
-        contenu.add(Box.createVerticalStrut(14));
-        contenu.add(champLabelise("Date du prêt", champDatePret));
-        contenu.add(Box.createVerticalStrut(14));
-        contenu.add(champLabelise("Date d'échéance", champEcheance));
-        contenu.add(Box.createVerticalStrut(24));
+        contenu.add(Box.createVerticalStrut(12));
+        contenu.add(champLabelise("Date du prêt (AAAA-MM-JJ)", champDatePret));
+        contenu.add(Box.createVerticalStrut(12));
+        contenu.add(champLabelise("Date d'échéance (AAAA-MM-JJ)", champEcheance));
+        contenu.add(Box.createVerticalStrut(20));
 
         JPanel boutons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         boutons.setOpaque(false);
@@ -229,13 +291,16 @@ public class PretPanel extends JPanel {
         BoutonArrondi boutonEnregistrer = new BoutonArrondi(modification ? "Enregistrer" : "Ajouter");
         boutonEnregistrer.addActionListener(e -> {
             try {
+                LocalDate parsedDatePret = LocalDate.parse(champDatePret.getText().trim());
+                LocalDate parsedDateEcheance = LocalDate.parse(champEcheance.getText().trim());
+
                 Pret pret = new Pret();
                 pret.setNumPret(champNumPret.getText().trim());
                 pret.setNumCompte(champNumCompte.getText().trim());
                 pret.setMontantPrete(new BigDecimal(champMontant.getText().trim()));
                 pret.setTauxInteret(new BigDecimal(champTaux.getText().trim()));
-                pret.setDatePret(dateDuJour);
-                pret.setDateEcheance(dateEcheanceCalculee);
+                pret.setDatePret(parsedDatePret);
+                pret.setDateEcheance(parsedDateEcheance);
 
                 boolean succes = modification
                         ? pretService.modifierPret(pret)
@@ -253,6 +318,9 @@ public class PretPanel extends JPanel {
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(dialogue,
                         "Montant ou taux invalide.", "Erreur", JOptionPane.ERROR_MESSAGE);
+            } catch (DateTimeParseException ex) {
+                JOptionPane.showMessageDialog(dialogue,
+                        "Format de date invalide. Utilisez le format AAAA-MM-JJ.", "Erreur de date", JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -264,7 +332,7 @@ public class PretPanel extends JPanel {
         dialogue.setVisible(true);
     }
 
-   private JPanel champLabelise(String libelle, JComponent champ) {
+    private JPanel champLabelise(String libelle, JComponent champ) {
         JPanel panneauChamp = new JPanel();
         panneauChamp.setOpaque(false);
         panneauChamp.setLayout(new BoxLayout(panneauChamp, BoxLayout.Y_AXIS));

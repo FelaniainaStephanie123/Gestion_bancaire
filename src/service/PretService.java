@@ -6,6 +6,7 @@ import modele.Pret;
 import modele.SituationPret;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import dao.ClientDAO;
 import modele.Client;
@@ -140,4 +141,7 @@ public class PretService {
     public List<SituationPret> situationsDesPrets() {
         return situationPretDAO.listerSituations();
     }
+    public List<Pret> getPretsFiltres(LocalDate dateDebut, LocalDate dateFin, String motCle) {
+    return pretDAO.listerParPeriode(dateDebut, dateFin, motCle);
+}
 }

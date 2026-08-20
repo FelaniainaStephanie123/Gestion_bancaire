@@ -5,6 +5,7 @@ import service.ClientService;
 import vue.composants.BoutonArrondi;
 import vue.composants.ChampTexteArrondi;
 import vue.composants.PanneauArrondi;
+import vue.composants.StyleTableau;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -106,7 +107,9 @@ public class ClientPanel extends JPanel {
         };
 
         table = new JTable(modeleTable);
-        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        StyleTableau.appliquer(table);
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        table.setFillsViewportHeight(true);
         table.setRowHeight(38);
         table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -139,6 +142,7 @@ public class ClientPanel extends JPanel {
 
         JScrollPane conteneur = new JScrollPane(panneau);
         conteneur.setBorder(BorderFactory.createEmptyBorder());
+        conteneur.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         conteneur.getVerticalScrollBar().setUnitIncrement(16);
         return conteneur;
     }
@@ -333,13 +337,13 @@ public class ClientPanel extends JPanel {
             setLayout(new FlowLayout(FlowLayout.CENTER, 8, 4));
             setOpaque(false);
 
-            boutonModifier = new BoutonArrondi("Modifier", BoutonArrondi.Style.PLEIN,
-                    new Color(41, 84, 209), new Color(33, 68, 173), Color.WHITE);
-            boutonModifier.setPreferredSize(new Dimension(90, 30));
+                boutonModifier = new BoutonArrondi("", BoutonArrondi.Style.CONTOUR);
+                boutonModifier.definirIcone("edit", "Modifier");
+                boutonModifier.setPreferredSize(new Dimension(36, 30));
 
-            boutonSupprimer = new BoutonArrondi("Supprimer", BoutonArrondi.Style.PLEIN,
-                    new Color(214, 69, 69), new Color(184, 55, 55), Color.WHITE);
-            boutonSupprimer.setPreferredSize(new Dimension(90, 30));
+                boutonSupprimer = BoutonArrondi.boutonDanger("");
+                boutonSupprimer.definirIcone("delete", "Supprimer");
+                boutonSupprimer.setPreferredSize(new Dimension(36, 30));
 
             add(boutonModifier);
             add(boutonSupprimer);
@@ -355,26 +359,26 @@ public class ClientPanel extends JPanel {
     private class ActionsCellEditor extends AbstractCellEditor implements TableCellEditor {
 
         private final JPanel panneau;
-        private final JButton boutonModifier;
-        private final JButton boutonSupprimer;
+        private final BoutonArrondi boutonModifier;
+        private final BoutonArrondi boutonSupprimer;
         private int ligneCourante;
 
         public ActionsCellEditor() {
             panneau = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 4));
             panneau.setOpaque(false);
 
-            boutonModifier = new BoutonArrondi("Modifier", BoutonArrondi.Style.PLEIN,
-                    new Color(41, 84, 209), new Color(33, 68, 173), Color.WHITE);
-            boutonModifier.setPreferredSize(new Dimension(90, 30));
+                boutonModifier = new BoutonArrondi("", BoutonArrondi.Style.CONTOUR);
+                boutonModifier.definirIcone("edit", "Modifier");
+                boutonModifier.setPreferredSize(new Dimension(36, 30));
             boutonModifier.addActionListener(e -> {
                 fireEditingStopped();
                 Client selectionne = clientsAffiches.get(ligneCourante);
                 ouvrirFormulaire(selectionne);
             });
 
-            boutonSupprimer = new BoutonArrondi("Supprimer", BoutonArrondi.Style.PLEIN,
-                    new Color(214, 69, 69), new Color(184, 55, 55), Color.WHITE);
-            boutonSupprimer.setPreferredSize(new Dimension(90, 30));
+                boutonSupprimer = BoutonArrondi.boutonDanger("");
+                boutonSupprimer.definirIcone("delete", "Supprimer");
+                boutonSupprimer.setPreferredSize(new Dimension(36, 30));
             boutonSupprimer.addActionListener(e -> {
                 fireEditingStopped();
                 Client selectionne = clientsAffiches.get(ligneCourante);
@@ -385,10 +389,10 @@ public class ClientPanel extends JPanel {
                         JOptionPane.YES_NO_OPTION
                 );
                 if (confirmation == JOptionPane.YES_OPTION) {
-                    boolean succes = clientService.supprimerClient(selectionne.getNumCompte());
-                    if (!succes) {
+                    String erreur = clientService.supprimerClientAvecMessage(selectionne.getNumCompte());
+                    if (erreur != null) {
                         JOptionPane.showMessageDialog(ClientPanel.this,
-                                "Suppression impossible : ce client a peut-être des virements ou prêts liés.",
+                                erreur,
                                 "Erreur", JOptionPane.ERROR_MESSAGE);
                     }
                     rafraichir();

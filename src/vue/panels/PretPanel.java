@@ -6,6 +6,9 @@ import service.PretService;
 import vue.composants.BoutonArrondi;
 import vue.composants.ChampTexteArrondi;
 import vue.composants.PanneauArrondi;
+import vue.composants.StyleTableau;
+import com.github.lgooddatepicker.components.DatePicker;
+import com.github.lgooddatepicker.components.DatePickerSettings;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -41,8 +44,8 @@ public class PretPanel extends JPanel {
     private JTable table;
     private ChampTexteArrondi champRecherche;
     private List<Pret> pretsAffiches;
-    private JFormattedTextField champDateDebut;
-    private JFormattedTextField champDateFin;
+    private DatePicker champDateDebut;
+    private DatePicker champDateFin;
 
     public PretPanel() {
         setBackground(FOND);
@@ -74,9 +77,9 @@ public class PretPanel extends JPanel {
         JPanel gauche = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         gauche.setOpaque(false);
         gauche.add(champRecherche);
-        gauche.add(new JLabel("Du:"));
+        gauche.add(new JLabel("Du"));
         gauche.add(champDateDebut);
-        gauche.add(new JLabel("Au:"));
+        gauche.add(new JLabel("au"));
         gauche.add(champDateFin);
 
         BoutonArrondi boutonNouveau = new BoutonArrondi("+ Nouveau prêt");
@@ -88,22 +91,12 @@ public class PretPanel extends JPanel {
         return barre;
     }
 
-    private JFormattedTextField creerChampDateFiltre() {
-        MaskFormatter formatter = null;
-        try {
-            formatter = new MaskFormatter("####-##-##");
-            formatter.setPlaceholderCharacter('_');
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        JFormattedTextField champ = new JFormattedTextField(formatter);
-        champ.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        champ.setPreferredSize(new Dimension(110, 40));
-        champ.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { rafraichir(); }
-            @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { rafraichir(); }
-            @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { rafraichir(); }
-        });
+    private DatePicker creerChampDateFiltre() {
+        DatePickerSettings parametresDate = new DatePickerSettings();
+        parametresDate.setFormatForDatesCommonEra("dd/MM/yyyy");
+        DatePicker champ = new DatePicker(parametresDate);
+        champ.setDate(LocalDate.now());
+        champ.addDateChangeListener(e -> rafraichir());
         return champ;
     }
 
@@ -116,7 +109,9 @@ public class PretPanel extends JPanel {
         };
 
         table = new JTable(modeleTable);
-        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        StyleTableau.appliquer(table);
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        table.setFillsViewportHeight(true);
         table.setRowHeight(38);
         table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -149,6 +144,7 @@ public class PretPanel extends JPanel {
 
         JScrollPane conteneur = new JScrollPane(panneau);
         conteneur.setBorder(BorderFactory.createEmptyBorder());
+        conteneur.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         conteneur.getVerticalScrollBar().setUnitIncrement(16);
         return conteneur;
     }
@@ -158,8 +154,8 @@ public class PretPanel extends JPanel {
         String motCle = champRecherche == null ? "" : champRecherche.getText().trim().toLowerCase();
 
         // Récupération des filtres de dates sécurisés
-        LocalDate dateDebut = parserDateSecurisee(champDateDebut == null ? "" : champDateDebut.getText());
-        LocalDate dateFin = parserDateSecurisee(champDateFin == null ? "" : champDateFin.getText());
+        LocalDate dateDebut = champDateDebut == null ? null : champDateDebut.getDate();
+        LocalDate dateFin = champDateFin == null ? null : champDateFin.getDate();
 
         pretsAffiches = tous.stream()
                 .filter(p -> {
@@ -191,17 +187,6 @@ public class PretPanel extends JPanel {
                     p.getDateEcheance(),
                     ""
             });
-        }
-    }
-
-    private LocalDate parserDateSecurisee(String texte) {
-        if (texte == null || texte.contains("_") || texte.trim().isEmpty()) {
-            return null;
-        }
-        try {
-            return LocalDate.parse(texte.trim());
-        } catch (DateTimeParseException e) {
-            return null;
         }
     }
 
@@ -260,8 +245,12 @@ public class PretPanel extends JPanel {
             champNumPret.setText(pretExistant.getNumPret());
             champNumPret.setEditable(false);
             champNumCompte.setText(pretExistant.getNumCompte());
+            champNumCompte.setEditable(false);
             champMontant.setText(String.valueOf(pretExistant.getMontantPrete()));
+            champMontant.setEditable(false);
             champTaux.setText(String.valueOf(pretExistant.getTauxInteret()));
+            champTaux.setEditable(false);
+            champDatePret.setEditable(false);
         } else {
             champNumPret.setText(pretDAO.genererProchainNumPret());
             champNumPret.setEditable(false);
@@ -276,9 +265,13 @@ public class PretPanel extends JPanel {
         contenu.add(Box.createVerticalStrut(12));
         contenu.add(champLabelise("Taux d'intérêt (%)", champTaux));
         contenu.add(Box.createVerticalStrut(12));
-        contenu.add(champLabelise("Date du prêt (AAAA-MM-JJ)", champDatePret));
+        contenu.add(champLabelise(modification
+            ? "Date du prêt (non modifiable)"
+            : "Date du prêt (AAAA-MM-JJ)", champDatePret));
         contenu.add(Box.createVerticalStrut(12));
-        contenu.add(champLabelise("Date d'échéance (AAAA-MM-JJ)", champEcheance));
+        contenu.add(champLabelise(modification
+            ? "Date d'échéance (modifiable)"
+            : "Date d'échéance (AAAA-MM-JJ)", champEcheance));
         contenu.add(Box.createVerticalStrut(20));
 
         JPanel boutons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
@@ -311,8 +304,11 @@ public class PretPanel extends JPanel {
                     rafraichir();
                 } else {
                     JOptionPane.showMessageDialog(dialogue,
-                            "Impossible d'accorder ce prêt : le client possède déjà un prêt en cours non soldé.",
-                            "Prêt refusé", JOptionPane.WARNING_MESSAGE);
+                        modification
+                            ? "Impossible de modifier la date d'échéance du prêt."
+                            : "Impossible d'accorder ce prêt : le client possède déjà un prêt en cours non soldé.",
+                        modification ? "Modification refusée" : "Prêt refusé",
+                        JOptionPane.WARNING_MESSAGE);
                 }
 
             } catch (NumberFormatException ex) {
@@ -362,13 +358,13 @@ public class PretPanel extends JPanel {
             setLayout(new FlowLayout(FlowLayout.CENTER, 8, 4));
             setOpaque(false);
 
-            boutonModifier = new BoutonArrondi("Modifier", BoutonArrondi.Style.PLEIN,
-                    new Color(41, 84, 209), new Color(33, 68, 173), Color.WHITE);
-            boutonModifier.setPreferredSize(new Dimension(90, 30));
+                boutonModifier = new BoutonArrondi("", BoutonArrondi.Style.CONTOUR);
+                boutonModifier.definirIcone("edit", "Modifier");
+                boutonModifier.setPreferredSize(new Dimension(36, 30));
 
-            boutonSupprimer = new BoutonArrondi("Supprimer", BoutonArrondi.Style.PLEIN,
-                    new Color(214, 69, 69), new Color(184, 55, 55), Color.WHITE);
-            boutonSupprimer.setPreferredSize(new Dimension(90, 30));
+                boutonSupprimer = BoutonArrondi.boutonDanger("");
+                boutonSupprimer.definirIcone("delete", "Supprimer");
+                boutonSupprimer.setPreferredSize(new Dimension(36, 30));
 
             add(boutonModifier);
             add(boutonSupprimer);
@@ -383,26 +379,26 @@ public class PretPanel extends JPanel {
 
     private class ActionsCellEditor extends AbstractCellEditor implements TableCellEditor {
         private final JPanel panneau;
-        private final JButton boutonModifier;
-        private final JButton boutonSupprimer;
+        private final BoutonArrondi boutonModifier;
+        private final BoutonArrondi boutonSupprimer;
         private int ligneCourante;
 
         public ActionsCellEditor() {
             panneau = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 4));
             panneau.setOpaque(false);
 
-            boutonModifier = new BoutonArrondi("Modifier", BoutonArrondi.Style.PLEIN,
-                    new Color(41, 84, 209), new Color(33, 68, 173), Color.WHITE);
-            boutonModifier.setPreferredSize(new Dimension(90, 30));
+                boutonModifier = new BoutonArrondi("", BoutonArrondi.Style.CONTOUR);
+                boutonModifier.definirIcone("edit", "Modifier");
+                boutonModifier.setPreferredSize(new Dimension(36, 30));
             boutonModifier.addActionListener(e -> {
                 fireEditingStopped();
                 Pret selectionne = pretsAffiches.get(ligneCourante);
                 ouvrirFormulaire(selectionne);
             });
 
-            boutonSupprimer = new BoutonArrondi("Supprimer", BoutonArrondi.Style.PLEIN,
-                    new Color(214, 69, 69), new Color(184, 55, 55), Color.WHITE);
-            boutonSupprimer.setPreferredSize(new Dimension(90, 30));
+                boutonSupprimer = BoutonArrondi.boutonDanger("");
+                boutonSupprimer.definirIcone("delete", "Supprimer");
+                boutonSupprimer.setPreferredSize(new Dimension(36, 30));
             boutonSupprimer.addActionListener(e -> {
                 fireEditingStopped();
                 Pret selectionne = pretsAffiches.get(ligneCourante);

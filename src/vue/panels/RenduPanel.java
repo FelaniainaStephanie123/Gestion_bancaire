@@ -6,6 +6,9 @@ import service.RenduService;
 import vue.composants.BoutonArrondi;
 import vue.composants.ChampTexteArrondi;
 import vue.composants.PanneauArrondi;
+import vue.composants.StyleTableau;
+import com.github.lgooddatepicker.components.DatePicker;
+import com.github.lgooddatepicker.components.DatePickerSettings;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -33,6 +36,8 @@ public class RenduPanel extends JPanel {
     private DefaultTableModel modeleTable;
     private JTable table;
     private ChampTexteArrondi champRecherche;
+    private DatePicker champDateDebut;
+    private DatePicker champDateFin;
     private List<Rendu> renduAffiches;
 
     public RenduPanel() {
@@ -57,9 +62,16 @@ public class RenduPanel extends JPanel {
         champRecherche.setPreferredSize(new Dimension(320, 40));
         champRecherche.addActionListener(e -> rafraichir());
 
-        JPanel gauche = new JPanel(new BorderLayout());
+        champDateDebut = creerChampDateFiltre();
+        champDateFin = creerChampDateFiltre();
+
+        JPanel gauche = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         gauche.setOpaque(false);
-        gauche.add(champRecherche, BorderLayout.CENTER);
+        gauche.add(champRecherche);
+        gauche.add(new JLabel("Du"));
+        gauche.add(champDateDebut);
+        gauche.add(new JLabel("au"));
+        gauche.add(champDateFin);
 
        BoutonArrondi boutonNouveau = new BoutonArrondi("+ Nouveau remboursement");
 boutonNouveau.addActionListener(e -> ouvrirFormulaire(null));
@@ -68,6 +80,15 @@ boutonNouveau.addActionListener(e -> ouvrirFormulaire(null));
         barre.add(boutonNouveau, BorderLayout.EAST);
 
         return barre;
+    }
+
+    private DatePicker creerChampDateFiltre() {
+        DatePickerSettings parametresDate = new DatePickerSettings();
+        parametresDate.setFormatForDatesCommonEra("dd/MM/yyyy");
+        DatePicker champ = new DatePicker(parametresDate);
+        champ.setDate(LocalDate.now());
+        champ.addDateChangeListener(e -> rafraichir());
+        return champ;
     }
 
     private JScrollPane construireTableau() {
@@ -80,6 +101,7 @@ boutonNouveau.addActionListener(e -> ouvrirFormulaire(null));
         };
 
         table = new JTable(modeleTable);
+        StyleTableau.appliquer(table);
         table.setRowHeight(34);
         table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -107,7 +129,9 @@ boutonNouveau.addActionListener(e -> ouvrirFormulaire(null));
         JPanel barre = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
         barre.setOpaque(false);
 
-        BoutonArrondi boutonModifier = new BoutonArrondi("Modifier", BoutonArrondi.Style.CONTOUR);
+        BoutonArrondi boutonModifier = new BoutonArrondi("", BoutonArrondi.Style.CONTOUR);
+        boutonModifier.definirIcone("edit", "Modifier");
+        boutonModifier.setPreferredSize(new Dimension(42, 36));
         boutonModifier.addActionListener(e -> {
             Rendu selectionne = renduSelectionne();
             if (selectionne != null) {
@@ -117,7 +141,9 @@ boutonNouveau.addActionListener(e -> ouvrirFormulaire(null));
             }
         });
 
-        BoutonArrondi boutonSupprimer = BoutonArrondi.boutonDanger("Supprimer");
+        BoutonArrondi boutonSupprimer = BoutonArrondi.boutonDanger("");
+        boutonSupprimer.definirIcone("delete", "Supprimer");
+        boutonSupprimer.setPreferredSize(new Dimension(42, 36));
         boutonSupprimer.addActionListener(e -> {
             Rendu selectionne = renduSelectionne();
             if (selectionne == null) {
@@ -153,11 +179,19 @@ boutonNouveau.addActionListener(e -> ouvrirFormulaire(null));
 
         List<Rendu> tous = renduService.tousLesRemboursements();
         String motCle = champRecherche == null ? "" : champRecherche.getText().trim().toLowerCase();
+        LocalDate dateDebut = champDateDebut == null ? null : champDateDebut.getDate();
+        LocalDate dateFin = champDateFin == null ? null : champDateFin.getDate();
 
         renduAffiches = tous.stream()
-                .filter(r -> motCle.isEmpty()
-                        || (r.getNumRendu() != null && r.getNumRendu().toLowerCase().contains(motCle))
-                        || (r.getNumPret() != null && r.getNumPret().toLowerCase().contains(motCle)))
+            .filter(r -> {
+                boolean matchTexte = motCle.isEmpty()
+                    || (r.getNumRendu() != null && r.getNumRendu().toLowerCase().contains(motCle))
+                    || (r.getNumPret() != null && r.getNumPret().toLowerCase().contains(motCle));
+                boolean matchDate = r.getDateRendu() != null
+                    && (dateDebut == null || !r.getDateRendu().isBefore(dateDebut))
+                    && (dateFin == null || !r.getDateRendu().isAfter(dateFin));
+                return matchTexte && matchDate;
+            })
                 .toList();
 
         modeleTable.setRowCount(0);

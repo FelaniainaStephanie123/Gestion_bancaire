@@ -7,6 +7,9 @@ import service.VirementService;
 import vue.composants.BoutonArrondi;
 import vue.composants.ChampTexteArrondi;
 import vue.composants.PanneauArrondi;
+import vue.composants.StyleTableau;
+import com.github.lgooddatepicker.components.DatePicker;
+import com.github.lgooddatepicker.components.DatePickerSettings;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -14,7 +17,9 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -35,6 +40,8 @@ public class VirementPanel extends JPanel {
     private DefaultTableModel modeleTable;
     private JTable table;
     private ChampTexteArrondi champRecherche;
+    private DatePicker dateDebut;
+    private DatePicker dateFin;
     private List<Virement> virementsAffiches;
 
     public VirementPanel() {
@@ -50,36 +57,48 @@ public class VirementPanel extends JPanel {
         rafraichir();
     }
 
-   private JPanel construireBarreOutils() {
-    JPanel barre = new JPanel(new BorderLayout(15, 0));
-    barre.setOpaque(false);
+    private JPanel construireBarreOutils() {
+        JPanel barre = new JPanel(new BorderLayout(15, 0));
+        barre.setOpaque(false);
 
-    // Initialisation du champ avec le placeholder approprié
-    champRecherche = new ChampTexteArrondi("Rechercher par n° de virement ou compte...");
-    champRecherche.setPreferredSize(new Dimension(320, 40));
+        champRecherche = new ChampTexteArrondi("Rechercher par n° de virement ou compte...");
+        champRecherche.setPreferredSize(new Dimension(320, 40));
+        champRecherche.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { rafraichir(); }
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { rafraichir(); }
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { rafraichir(); }
+        });
 
-    // Ajout du DocumentListener pour recherche en temps réel
-    champRecherche.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-        @Override
-        public void insertUpdate(javax.swing.event.DocumentEvent e) { rafraichir(); }
-        @Override
-        public void removeUpdate(javax.swing.event.DocumentEvent e) { rafraichir(); }
-        @Override
-        public void changedUpdate(javax.swing.event.DocumentEvent e) { rafraichir(); }
-    });
+        DatePickerSettings parametresDateDebut = new DatePickerSettings();
+        parametresDateDebut.setFormatForDatesCommonEra("dd/MM/yyyy");
+        DatePickerSettings parametresDateFin = new DatePickerSettings();
+        parametresDateFin.setFormatForDatesCommonEra("dd/MM/yyyy");
+        dateDebut = new DatePicker(parametresDateDebut);
+        dateFin = new DatePicker(parametresDateFin);
+        LocalDate aujourdHui = LocalDate.now();
+        dateDebut.setDate(aujourdHui);
+        dateFin.setDate(aujourdHui);
+        dateDebut.addDateChangeListener(e -> rafraichir());
+        dateFin.addDateChangeListener(e -> rafraichir());
 
-    JPanel zoneRecherche = new JPanel(new BorderLayout(10, 0));
-    zoneRecherche.setOpaque(false);
-    zoneRecherche.add(champRecherche, BorderLayout.CENTER);
+        JPanel filtres = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        filtres.setOpaque(false);
+        filtres.add(champRecherche);
+        filtres.add(new JLabel("Du"));
+        filtres.add(dateDebut);
+        filtres.add(new JLabel("au"));
+        filtres.add(dateFin);
 
-    BoutonArrondi boutonNouveau = new BoutonArrondi("+ Effectuer un virement");
-    boutonNouveau.addActionListener(e -> ouvrirFormulaireVirement());
+        BoutonArrondi boutonNouveau = new BoutonArrondi("+ Effectuer un virement");
+        boutonNouveau.addActionListener(e -> ouvrirFormulaireVirement());
 
-    barre.add(zoneRecherche, BorderLayout.WEST);
-    barre.add(boutonNouveau, BorderLayout.EAST);
-
-    return barre;
-}
+        barre.add(filtres, BorderLayout.CENTER);
+        barre.add(boutonNouveau, BorderLayout.EAST);
+        return barre;
+    }
 
     private JScrollPane construireTableau() {
 
@@ -91,6 +110,7 @@ public class VirementPanel extends JPanel {
         };
 
         table = new JTable(modeleTable);
+        StyleTableau.appliquer(table);
         table.setRowHeight(34);
         table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -128,7 +148,9 @@ public class VirementPanel extends JPanel {
             genererAvisPdf(selectionne);
         });
 
-        BoutonArrondi boutonModifierDate = new BoutonArrondi("Corriger la date", BoutonArrondi.Style.CONTOUR);
+        BoutonArrondi boutonModifierDate = new BoutonArrondi("", BoutonArrondi.Style.CONTOUR);
+        boutonModifierDate.definirIcone("edit", "Corriger la date");
+        boutonModifierDate.setPreferredSize(new Dimension(42, 36));
         boutonModifierDate.addActionListener(e -> {
             Virement selectionne = virementSelectionne();
             if (selectionne == null) {
@@ -138,7 +160,9 @@ public class VirementPanel extends JPanel {
             ouvrirFormulaireCorrection(selectionne);
         });
 
-        BoutonArrondi boutonSupprimer = BoutonArrondi.boutonDanger("Supprimer");
+        BoutonArrondi boutonSupprimer = BoutonArrondi.boutonDanger("");
+        boutonSupprimer.definirIcone("delete", "Supprimer");
+        boutonSupprimer.setPreferredSize(new Dimension(42, 36));
         boutonSupprimer.addActionListener(e -> {
             Virement selectionne = virementSelectionne();
             if (selectionne == null) {
@@ -197,7 +221,7 @@ public class VirementPanel extends JPanel {
 
         ChampTexteArrondi champDate = new ChampTexteArrondi("AAAA-MM-JJ HH:MM");
         champDate.setText(virement.getDateTransfert().toLocalDate() + " "
-                + String.format("%02d:%02d", virement.getDateTransfert().getHour(), virement.getDateTransfert().getMinute()));
+            + String.format("%02d:%02d", virement.getDateTransfert().getHour(), virement.getDateTransfert().getMinute()));
         contenu.add(champLabelise("Date du virement", champDate));
         contenu.add(Box.createVerticalStrut(20));
 
@@ -245,7 +269,20 @@ public class VirementPanel extends JPanel {
     private void rafraichir() {
 
         String motCle = champRecherche == null ? "" : champRecherche.getText().trim();
-        virementsAffiches = virementService.rechercherVirements(motCle);
+        List<Virement> virements = virementService.rechercherVirements(motCle);
+        LocalDate debut = dateDebut == null ? null : dateDebut.getDate();
+        LocalDate fin = dateFin == null ? null : dateFin.getDate();
+        virementsAffiches = new ArrayList<>();
+
+        for (Virement virement : virements) {
+            LocalDate dateVirement = virement.getDateTransfert() == null
+                    ? null : virement.getDateTransfert().toLocalDate();
+            if (dateVirement != null
+                    && (debut == null || !dateVirement.isBefore(debut))
+                    && (fin == null || !dateVirement.isAfter(fin))) {
+                virementsAffiches.add(virement);
+            }
+        }
 
         modeleTable.setRowCount(0);
         for (Virement v : virementsAffiches) {

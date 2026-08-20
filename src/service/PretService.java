@@ -1,16 +1,13 @@
 package service;
 
-import dao.ClientDAO;
 import dao.PretDAO;
 import dao.SituationPretDAO;
-import modele.Client;
 import modele.EmailNotification;
 import modele.Pret;
 import modele.SituationPret;
 import util.ConnexionBD;
 
 import java.math.BigDecimal;
-<<<<<<< HEAD
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -18,9 +15,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.ArrayList;
-=======
 import java.time.LocalDate;
->>>>>>> c8b9a4e684a99209dfc56be1f16f53305486da97
 import java.util.List;
 
 public class PretService {
@@ -82,23 +77,8 @@ public class PretService {
         // 1. Enregistrer le prêt
         boolean pretAjoute = pretDAO.ajouter(pret);
 
-        // 2. Mettre à jour le solde du client et programmer la notification
+        // 2. Programmer la notification
         if (pretAjoute) {
-            ClientDAO clientDAO = new ClientDAO();
-            Client client = clientDAO.rechercherParId(pret.getNumCompte());
-
-            if (client != null) {
-                BigDecimal soldeActuel = client.getSoldeActuel();
-                if (soldeActuel == null) {
-                    soldeActuel = BigDecimal.ZERO;
-                }
-
-                // Créditer le compte du montant du prêt
-                BigDecimal nouveauSolde = soldeActuel.add(pret.getMontantPrete());
-                client.setSoldeActuel(nouveauSolde);
-                clientDAO.modifier(client);
-            }
-
             NotificationService notificationService = new NotificationService();
             notificationService.programmerNotificationPret(pret);
         }

@@ -55,20 +55,37 @@ public class ClientDAO implements DAO<Client, String> {
 
     @Override
     public boolean supprimer(String numCompte) {
-        String sql = "DELETE FROM client WHERE num_compte = ?";
+        return supprimerAvecMessage(numCompte) == null;
+    }
+
+    public String supprimerAvecMessage(String numCompte) {
+        String sql = "UPDATE client SET actif = FALSE WHERE num_compte = ? AND actif = TRUE";
         try (Connection cn = ConnexionBD.getConnexion();
              PreparedStatement ps = cn.prepareStatement(sql)) {
             ps.setString(1, numCompte);
-            return ps.executeUpdate() > 0;
+            return ps.executeUpdate() > 0 ? null : "Client introuvable ou déjà désactivé.";
         } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
+            return "Erreur lors de la suppression du client.";
+        }
+    }
+
+    public boolean possedePretNonSolde(String numCompte) {
+        String sql = "SELECT EXISTS (SELECT 1 FROM v_situation_prets "
+                + "WHERE num_compte = ? AND reste_a_payer > 0)";
+        try (Connection cn = ConnexionBD.getConnexion();
+             PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setString(1, numCompte);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getBoolean(1);
+            }
+        } catch (SQLException e) {
+            return true;
         }
     }
 
     @Override
     public Client rechercherParId(String numCompte) {
-        String sql = "SELECT * FROM client WHERE num_compte = ?";
+        String sql = "SELECT * FROM client WHERE num_compte = ? AND actif = TRUE";
         try (Connection cn = ConnexionBD.getConnexion();
              PreparedStatement ps = cn.prepareStatement(sql)) {
             ps.setString(1, numCompte);
@@ -86,7 +103,7 @@ public class ClientDAO implements DAO<Client, String> {
     @Override
     public List<Client> listerTous() {
         List<Client> liste = new ArrayList<>();
-        String sql = "SELECT * FROM client ORDER BY num_compte DESC";
+        String sql = "SELECT * FROM client WHERE actif = TRUE ORDER BY num_compte DESC";
         try (Connection cn = ConnexionBD.getConnexion();
              PreparedStatement ps = cn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -104,7 +121,7 @@ public class ClientDAO implements DAO<Client, String> {
      */
    public List<Client> rechercher(String motCle) {
         List<Client> liste = new ArrayList<>();
-        String sql = "SELECT * FROM client WHERE LOWER(num_compte) LIKE LOWER(?) OR LOWER(nom) LIKE LOWER(?) OR LOWER(prenoms) LIKE LOWER(?) ORDER BY nom";
+        String sql = "SELECT * FROM client WHERE actif = TRUE AND (LOWER(num_compte) LIKE LOWER(?) OR LOWER(nom) LIKE LOWER(?) OR LOWER(prenoms) LIKE LOWER(?)) ORDER BY nom";
         try (Connection cn = ConnexionBD.getConnexion();
              PreparedStatement ps = cn.prepareStatement(sql)) {
             String motif = "%" + motCle + "%";

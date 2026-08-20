@@ -71,12 +71,20 @@ public class ClientService {
 
     public boolean supprimerClient(String numCompte) {
 
+        return supprimerClientAvecMessage(numCompte) == null;
+    }
+
+    public String supprimerClientAvecMessage(String numCompte) {
+
         if (numCompte == null || numCompte.isEmpty()) {
-            System.out.println("Erreur : numéro de compte manquant.");
-            return false;
+            return "Numéro de compte manquant.";
         }
 
-        return clientDAO.supprimer(numCompte);
+        if (clientDAO.possedePretNonSolde(numCompte)) {
+            return "Impossible de supprimer ce client : son prêt n'est pas encore totalement remboursé.";
+        }
+
+        return clientDAO.supprimerAvecMessage(numCompte);
     }
 
     public Client chercherClient(String numCompte) {

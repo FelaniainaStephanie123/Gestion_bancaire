@@ -219,7 +219,8 @@ public class BeneficePanel extends JPanel {
     private JPanel buildGraphiques() {
         JPanel row = new JPanel(new GridLayout(1, 2, 12, 0));
         row.setOpaque(false);
-        row.setPreferredSize(new Dimension(0, 290));
+        row.setMinimumSize(new Dimension(0, 320));
+        row.setPreferredSize(new Dimension(0, 320));
 
         // ── Line Chart ─────────────────────────────────────────────────────
         lineChart = new LineChartPanel();
@@ -243,6 +244,7 @@ public class BeneficePanel extends JPanel {
             }
         };
         wrapper.setOpaque(false);
+        wrapper.setMinimumSize(new Dimension(260, 280));
         wrapper.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(BORDER_CLR, 1),
             new EmptyBorder(16, 18, 16, 18)
@@ -262,7 +264,8 @@ public class BeneficePanel extends JPanel {
     private JPanel buildTableaux() {
         JPanel row = new JPanel(new GridLayout(1, 2, 12, 0));
         row.setOpaque(false);
-        row.setPreferredSize(new Dimension(0, 250));
+        row.setMinimumSize(new Dimension(0, 280));
+        row.setPreferredSize(new Dimension(0, 280));
 
         // ── Top 5 prêts ────────────────────────────────────────────────────
         String[] colTop5 = {"Prêt", "Client", "Montant prêté (Ar)", "Taux", "À rendre (Ar)"};
@@ -292,6 +295,7 @@ public class BeneficePanel extends JPanel {
             }
         };
         wrapper.setOpaque(false);
+        wrapper.setMinimumSize(new Dimension(260, 240));
         wrapper.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(BORDER_CLR, 1),
             new EmptyBorder(16, 18, 16, 18)
@@ -328,6 +332,8 @@ public class BeneficePanel extends JPanel {
         JScrollPane scroll = new JScrollPane(table);
         scroll.setBorder(null);
         scroll.getViewport().setBackground(Color.WHITE);
+        scroll.setMinimumSize(new Dimension(220, 180));
+        scroll.getVerticalScrollBar().setUnitIncrement(12);
 
         wrapper.add(t, BorderLayout.NORTH);
         wrapper.add(scroll, BorderLayout.CENTER);
@@ -553,7 +559,8 @@ public class BeneficePanel extends JPanel {
 
         LineChartPanel() {
             setOpaque(false);
-            setPreferredSize(new Dimension(0, 220));
+            setMinimumSize(new Dimension(220, 230));
+            setPreferredSize(new Dimension(220, 230));
         }
 
         void setData(List<String> labels, List<Double> prets, List<Double> benefices) {
@@ -572,6 +579,10 @@ public class BeneficePanel extends JPanel {
             g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 
             int W = getWidth(), H = getHeight();
+            if (W < 120 || H < 100) {
+                g2.dispose();
+                return;
+            }
             int padL = 64, padR = 20, padT = 20, padB = 40;
             int chartW = W - padL - padR;
             int chartH = H - padT - padB;
@@ -704,7 +715,8 @@ public class BeneficePanel extends JPanel {
 
         DonutChartPanel() {
             setOpaque(false);
-            setPreferredSize(new Dimension(0, 220));
+            setMinimumSize(new Dimension(260, 230));
+            setPreferredSize(new Dimension(260, 230));
         }
 
         void setData(Map<String, Integer> data) { this.data = data; }
@@ -728,6 +740,10 @@ public class BeneficePanel extends JPanel {
             if (total == 0) { g2.dispose(); return; }
 
             int W = getWidth(), H = getHeight();
+            if (W < 180 || H < 100) {
+                g2.dispose();
+                return;
+            }
             int size    = Math.min(W / 2, H) - 30;
             int cx      = size / 2 + 20;
             int cy      = H / 2;

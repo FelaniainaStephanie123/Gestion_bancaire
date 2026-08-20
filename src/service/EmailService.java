@@ -3,6 +3,8 @@ package service;
 import jakarta.mail.*;
 import jakarta.mail.internet.*;
 
+import java.nio.charset.StandardCharsets;
+import java.io.UnsupportedEncodingException;
 import java.util.Properties;
 
 
@@ -80,10 +82,15 @@ public class EmailService {
             );
 
 
-            message.setSubject(sujet);
+                try {
+                    message.setSubject(MimeUtility.encodeText(
+                            sujet, StandardCharsets.UTF_8.name(), "B"));
+                } catch (UnsupportedEncodingException e) {
+                    message.setSubject(sujet);
+                }
 
 
-            message.setText(contenu);
+            message.setContent(contenu, "text/plain; charset=UTF-8");
 
 
 

@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.net.URL;
 
 /**
  * Bouton rectangulaire à coins arrondis, dans le style visuel de BankSys.
@@ -27,6 +28,8 @@ public class BoutonArrondi extends JButton {
     private final Color couleurTexte;
     private int rayon = 18;
     private boolean survole = false;
+    private Image imageIcone;
+    private boolean modeIcone = false;
 
     public BoutonArrondi(String texte) {
         this(texte, Style.PLEIN, BLEU_PRINCIPAL, BLEU_SURVOL, Color.WHITE);
@@ -64,12 +67,14 @@ public class BoutonArrondi extends JButton {
             @Override
             public void mouseEntered(MouseEvent e) {
                 survole = true;
+                redimensionnerIcone();
                 repaint();
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
                 survole = false;
+                redimensionnerIcone();
                 repaint();
             }
         });
@@ -80,12 +85,44 @@ public class BoutonArrondi extends JButton {
         return new BoutonArrondi(texte, Style.CONTOUR, Color.WHITE, new Color(255, 235, 235), ROUGE_PRINCIPAL);
     }
 
+    public void definirIcone(String nom, String description) {
+        URL url = getClass().getResource("/ressources/" + nom + ".png");
+        if (url == null) {
+            return;
+        }
+        imageIcone = new ImageIcon(url).getImage();
+        modeIcone = true;
+        setText("");
+        setToolTipText(description);
+        setHorizontalAlignment(SwingConstants.CENTER);
+        setVerticalAlignment(SwingConstants.CENTER);
+        setPreferredSize(new Dimension(40, 40));
+        setMinimumSize(new Dimension(40, 40));
+        setMaximumSize(new Dimension(40, 40));
+        setBorder(BorderFactory.createEmptyBorder());
+        redimensionnerIcone();
+    }
+
+    private void redimensionnerIcone() {
+        if (imageIcone == null) {
+            return;
+        }
+        int taille = survole ? 27 : 22;
+        Image image = imageIcone.getScaledInstance(taille, taille, Image.SCALE_SMOOTH);
+        setIcon(new ImageIcon(image));
+    }
+
     public void setRayon(int rayon) {
         this.rayon = rayon;
     }
 
     @Override
     protected void paintComponent(Graphics g) {
+        if (modeIcone) {
+            super.paintComponent(g);
+            return;
+        }
+
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 

@@ -64,17 +64,14 @@ public boolean ajouter(Pret objet) {
 }
 @Override
 public boolean modifier(Pret objet) {
-     String sql = "UPDATE preter SET num_compte = ?, montant_prete = ?, taux_interet = ?, date_pret = ?, date_echeance = ? WHERE num_pret = ?";
+    String sql = "UPDATE preter SET date_echeance = ? WHERE num_pret = ?";
 
     try (Connection cn = ConnexionBD.getConnexion();
          PreparedStatement ps = cn.prepareStatement(sql)) {
 
-        ps.setString(1, objet.getNumCompte());
-        ps.setBigDecimal(2, objet.getMontantPrete());
-        ps.setBigDecimal(3, objet.getTauxInteret());
-        ps.setDate(4, java.sql.Date.valueOf(objet.getDatePret()));
-        ps.setDate(5, java.sql.Date.valueOf(objet.getDateEcheance()));
-        ps.setString(6, objet.getNumPret());
+        ps.setDate(1, objet.getDateEcheance() == null
+            ? null : java.sql.Date.valueOf(objet.getDateEcheance()));
+        ps.setString(2, objet.getNumPret());
 
         return ps.executeUpdate() > 0;
 
